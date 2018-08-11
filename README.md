@@ -10,7 +10,7 @@ This came of the simple need to handle batch uploads of both image assets to col
     * [gee Zipshape](#gee-zipshape)
     * [gee upload](#gee-upload)
     * [gee table upload](#gee-table-upload)
-    * [gee tasks](#gee tasks)
+    * [gee tasks](#gee-tasks)
     * [gee delete](#gee-delete)
 
 ## Installation
