@@ -1,0 +1,2 @@
+filename,task_id,error_msg
+SB_21_Y_C,0,Command 'earthengine upload table --asset_id users/samapriya/rival/SB_21_Y_Cgs://earthengine-uploads/ee-L2FwcGhvc3RpbmdfZ2xvYmFsL2Jsb2JzL0FFbkIyVXE3ajZHeUUzd25RdWpqeFJLSEU2clQ0UV9lc2ZQaDZHYUotWXA5dUEzUGFUcmY1WDdOY0gxa0FOUm80YW8zak1RZGZCajVFZXVxaEQxaGFLTjdiNkY5UHF2bXB3LnJBNmZtTUdGd0FqT1Z4bmo/61b50c8c1cbabbbcd0bb50e0aca9e28924cf95f96ba995e88912ba55.zip' returned non-zero exit status 2
