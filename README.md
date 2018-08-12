@@ -50,7 +50,7 @@ Simple Client for Earth Engine Uploads
 positional arguments:
   {quota,zipshape,upload,tabup,tasks,delete}
     quota               Print Earth Engine total quota and used quota
-    zipshape            Zipped all shapefiles and subsidary files into
+    zipshape            Zips all shapefiles and subsidary files into
                         individual zip files
     upload              Batch Asset Uploader.
     tabup               Batch Table Uploader.

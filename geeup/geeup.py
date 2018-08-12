@@ -77,7 +77,7 @@ def main(args=None):
     parser_quota = subparsers.add_parser('quota', help='Print Earth Engine total quota and used quota')
     parser_quota.set_defaults(func=quota_from_parser)
 
-    parser_zipshape = subparsers.add_parser('zipshape', help='Zipped all shapefiles and subsidary files into individual zip files')
+    parser_zipshape = subparsers.add_parser('zipshape', help='Zips all shapefiles and subsidary files into individual zip files')
     required_named = parser_zipshape.add_argument_group('Required named arguments.')
     required_named.add_argument('--input', help='Path to the input directory with all shape files', required=True)
     required_named.add_argument('--output', help='Destination folder Full path where shp, shx, prj and dbf files if present in input will be zipped and stored', required=True)
