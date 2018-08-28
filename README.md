@@ -1,4 +1,6 @@
 # geeup: Simple CLI for Earth Engine Uploads
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1344130.svg)](https://doi.org/10.5281/zenodo.1344130)
+[![PyPI version](https://badge.fury.io/py/geeup.svg)](https://badge.fury.io/py/geeup)
 
 This came of the simple need to handle batch uploads of both image assets to collections but also thanks to the new table feature the possibility of batch uploading shapefiles into a folder. Though a lot of these tools including batch image uploader is part of my other project [geeadd](https://github.com/samapriya/gee_asset_manager_addon) which also includes additional features to add to the python CLI, this tool was designed to be minimal so as to allow the user to simply query thier quota, upload images or tables and also to query ongoing tasks and delete assets. I am hoping this tool with a simple objective proves useful to a few users of Google Earth Engine.
 
