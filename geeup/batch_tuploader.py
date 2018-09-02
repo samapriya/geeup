@@ -73,7 +73,7 @@ def tabup(user, source_path, destination_path, metadata_path=None, multipart_upl
         #print('Processing image '+str(current_image_no+1)+' of '+str(no_images)+' '+str(os.path.basename(image_path)))
         filename = __get_filename_from_path(path=image_path)
 
-        asset_full_path = destination_path + '/' + str(filename).replace(" ","_")
+        asset_full_path = destination_path + '/' + str(filename).replace(" ","_").strip()
 
         try:
             if user is not None:
