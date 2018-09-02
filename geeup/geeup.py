@@ -8,16 +8,24 @@ from batch_uploader import upload
 from batch_tuploader import tabup
 from batch_remover import delete
 from zipfiles import zipshape
-from hurry import filesize
 from os.path import expanduser
 from planet.api.utils import write_planet_json
 lpath=os.path.dirname(os.path.realpath(__file__))
 
+suffixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+def humansize(nbytes):
+    i = 0
+    while nbytes >= 1024 and i < len(suffixes)-1:
+        nbytes /= 1024.
+        i += 1
+    f = ('%.2f' % nbytes).rstrip('0').rstrip('.')
+    return '%s %s' % (f, suffixes[i])
+
 def quota():
     quota=ee.data.getAssetRootQuota(ee.data.getAssetRoots()[0]['id'])
     print('')
-    print("Total Quota: "+filesize.size(quota['asset_size']['limit']))
-    print("Used Quota: "+filesize.size(quota['asset_size']['usage']))
+    print("Total Quota: "+str(humansize(quota['asset_size']['limit'])))
+    print("Used Quota: "+str(humansize(quota['asset_size']['usage'])))
 
 def quota_from_parser(args):
     quota()

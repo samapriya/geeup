@@ -167,3 +167,10 @@ positional arguments:
 optional arguments:
   -h, --help  show this help message and exit
 ```
+
+# Changelog
+
+### v0.0.4
+
+- Improved valid table name check before upload
+- Improvements to earth engine quota tool for more accurate quota and human readable
