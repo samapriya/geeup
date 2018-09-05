@@ -20,13 +20,15 @@ def zipshape(directory,export):
                             #print(filepath)
                             file_paths.append(filepath)
                     os.chdir(export)
-                    if int(len(file_paths))==int(4):
+                    if not os.path.exists(filebase+'.zip') and int(len(file_paths))==int(4):
                         with ZipFile(filebase+'.zip','w') as zip:
                             print("Creating zipped folder "+str(filebase)+'.zip'+' at '+str(export))
                             # writing each file one by one
                             for file in file_paths:
                                 fname=os.path.basename(file)
                                 zip.write(file,fname)
+                    else:
+                        print('File already exists: '+str(filebase+'.zip')+' SKIPPING')
                 except:
                     pass
 #get_all_file_paths(directory=r"C:\Users\samapriya\Downloads\nexgengrid",export=r'D:\Library')
