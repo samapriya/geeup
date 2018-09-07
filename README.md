@@ -65,7 +65,7 @@ optional arguments:
   -h, --help            show this help message and exit
 ```
 
-To obtain help for a specific functionality, simply call it with _help_ switch, e.g.: `geeup dropinfo -h`. If you didn't install geeup, then you can run it just by going to *geeup* directory and running `python geeup.py [arguments go here]`
+To obtain help for a specific functionality, simply call it with _help_ switch, e.g.: `geeup zipshape -h`. If you didn't install geeup, then you can run it just by going to *geeup* directory and running `python geeup.py [arguments go here]`
 
 ## geeup Simple CLI for Earth Engine Uploads
 The tool is designed to handle batch uploading of images and tables(shapefiles). While there are image collection where you can batch upload imagery,for vector or shapefiles you have to batch upload them to a folder.
