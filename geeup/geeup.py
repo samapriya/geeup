@@ -9,7 +9,6 @@ from batch_tuploader import tabup
 from batch_remover import delete
 from zipfiles import zipshape
 from os.path import expanduser
-from planet.api.utils import write_planet_json
 lpath=os.path.dirname(os.path.realpath(__file__))
 
 suffixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
