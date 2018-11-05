@@ -2,7 +2,6 @@
 
 import argparse,os,ee
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
-from hurry import filesize
 from ee import oauth
 from batch_uploader import upload
 from batch_tuploader import tabup

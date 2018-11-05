@@ -170,6 +170,11 @@ optional arguments:
 
 # Changelog
 
+### v0.0.5
+
+- Removed unnecessary library imports
+- Minor improvements and updated readme
+
 ### v0.0.4
 
 - Improved valid table name check before upload
