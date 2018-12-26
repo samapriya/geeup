@@ -6,42 +6,35 @@ import logging
 import os
 import sys
 import time
-import subprocess
-import json
-import pandas as pd
+import requests
+import ast
+import ee
+import requests
+import retrying
+from requests_toolbelt.multipart import encoder
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver import Firefox
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+
 if sys.version_info > (3, 0):
     from urllib.parse import unquote
 else:
     from urllib import unquote
 
-import ee
-import requests
-import retrying
-from requests_toolbelt import MultipartEncoder
-from bs4 import BeautifulSoup
-
 from google.cloud import storage
+
+from metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
+pathway=os.path.dirname(os.path.realpath(__file__))
 ee.Initialize()
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 lp=os.path.dirname(os.path.realpath(__file__))
 def tabup(user, source_path, destination_path, metadata_path=None, multipart_upload=False, nodata_value=None, bucket_name=None):
-
-    """
-    Uploads content of a given directory to GEE. The function first uploads an asset to Google Cloud Storage (GCS)
-    and then uses ee.data.startIngestion to put it into GEE, Due to GCS intermediate step, users is asked for
-    Google's account name and password.
-
-    In case any exception happens during the upload, the function will repeat the call a given number of times, after
-    which the error will be propagated further.
-
-    :param user: name of a Google account
-    :param source_path: path to a directory
-    :param destination_path: where to upload (absolute path)
-    :param metadata_path: (optional) path to file with metadata
-    :param multipart_upload: (optional) alternative mode op upload - use if the other one fails
-    :param nodata_value: (optinal) value to burn into raster for missind data in the image
-    :return:
-    """
     submitted_tasks_id = {}
 
     __verify_path_for_upload(destination_path)
@@ -73,11 +66,11 @@ def tabup(user, source_path, destination_path, metadata_path=None, multipart_upl
         #print('Processing image '+str(current_image_no+1)+' of '+str(no_images)+' '+str(os.path.basename(image_path)))
         filename = __get_filename_from_path(path=image_path)
 
-        asset_full_path = destination_path + '/' + str(filename).replace(" ","_").strip()
+        asset_full_path = destination_path + '/' + filename
 
         try:
             if user is not None:
-                gsid = __upload_file_gee(session=google_session,
+                gsid = __upload_file_gee(s=google_session,
                                                   file_path=image_path,
                                                   use_multipart=multipart_upload)
             else:
@@ -137,45 +130,49 @@ def __start_ingestion_task(asset_request):
 
 
 def __get_google_auth_session(username, password):
-    google_accounts_url = 'https://accounts.google.com'
-    authentication_url = 'https://accounts.google.com/ServiceLoginAuth'
-
-    session = requests.session()
-
-    login_html = session.get(google_accounts_url)
-    soup_login = BeautifulSoup(login_html.content, 'html.parser').find('form').find_all('input')
-    payload = {}
-    for u in soup_login:
-        if u.has_attr('value'):
-            payload[u['name']] = u['value']
-
-    payload['Email'] = username
-    payload['Passwd'] = password
-
-    auto = login_html.headers.get('X-Auto-Login')
-    follow_up = unquote(unquote(auto)).split('continue=')[-1]
-
-    payload['continue'] = follow_up
-
-    session.post(authentication_url, data=payload)
-    return session
-
-
-def __get_upload_url(session):
-    # get url and discard; somehow it does not work for the first time
-    _ = session.get('https://ee-api.appspot.com/assets/upload/geturl?')
-    r = session.get('https://ee-api.appspot.com/assets/upload/geturl?')
-    if r.text.startswith('\n<!DOCTYPE html>'):
-        logging.error('Incorrect credentials. Probably. If you are sure the credentials are OK, refresh the authentication token. '
-                      'If it did not work report a problem. They might have changed something in the Matrix.')
-        sys.exit(1)
+    options = Options()
+    options.add_argument('-headless')
+    authorization_url="https://code.earthengine.google.com"
+    uname=username
+    passw=password
+    driver = Firefox(executable_path=os.path.join(pathway,"geckodriver.exe"),firefox_options=options)
+    driver.get(authorization_url)
+    time.sleep(5)
+    username = driver.find_element_by_xpath('//*[@id="identifierId"]')
+    username.send_keys(uname)
+    driver.find_element_by_id("identifierNext").click()
+    time.sleep(5)
+    passw=driver.find_element_by_name("password").send_keys(passw)
+    driver.find_element_by_id("passwordNext").click()
+    time.sleep(5)
+    try:
+        driver.find_element_by_xpath("//div[@id='view_container']/form/div[2]/div/div/div/ul/li/div/div[2]/p").click()
+        time.sleep(5)
+        driver.find_element_by_xpath("//div[@id='submit_approve_access']/content/span").click()
+        time.sleep(5)
+    except Exception as e:
+        pass
+    cookies = driver.get_cookies()
+    s = requests.Session()
+    print('Session authentication completed')
+    r=s.get("https://code.earthengine.google.com/assets/upload/geturl")
     d = ast.literal_eval(r.text)
+    print d['url']
+    return d['url']
+    return s
+
+def __get_upload_url(s):
+    # get url and discard; somehow it does not work for the first time
+    r=s.get("https://code.earthengine.google.com/assets/upload/geturl")
+    d = ast.literal_eval(r.text)
+    print d['url']
     return d['url']
 
 @retrying.retry(retry_on_exception=retry_if_ee_error, wait_exponential_multiplier=1000, wait_exponential_max=4000, stop_max_attempt_number=3)
-def __upload_file_gee(session, file_path, use_multipart):
+def __upload_file_gee(s, file_path, use_multipart):
+
     with open(file_path, 'rb') as f:
-        upload_url = __get_upload_url(session)
+        upload_url = __get_upload_url(s)
 
 
         if use_multipart:
@@ -184,10 +181,10 @@ def __upload_file_gee(session, file_path, use_multipart):
                 "composite": "NONE",
             })
             headers = {"Prefer": "respond-async", "Content-Type": form.content_type}
-            resp = session.post(upload_url, headers=headers, data=form)
+            resp = s.post(upload_url, headers=headers, data=form)
         else:
             files = {'file': f}
-            resp = session.post(upload_url, files=files)
+            resp = s.post(upload_url, files=files)
 
         gsid = resp.json()[0]
         #print('GSID',gsid)

@@ -6,22 +6,31 @@ import logging
 import os
 import sys
 import time
+import requests
+import ast
+import ee
+import requests
+import retrying
+from requests_toolbelt.multipart import encoder
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver import Firefox
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 if sys.version_info > (3, 0):
     from urllib.parse import unquote
 else:
     from urllib import unquote
 
-import ee
-import requests
-import retrying
-from requests_toolbelt.multipart import encoder
-from bs4 import BeautifulSoup
-
 from google.cloud import storage
 
 from metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
-
+pathway=os.path.dirname(os.path.realpath(__file__))
 
 def upload(user, source_path, destination_path, metadata_path=None, multipart_upload=False, nodata_value=None, bucket_name=None, band_names=[]):
     """
@@ -188,29 +197,33 @@ def __extract_metadata_for_image(filename, metadata):
 
 
 def __get_google_auth_session(username, password):
-    google_accounts_url = 'https://accounts.google.com'
-    authentication_url = 'https://accounts.google.com/ServiceLoginAuth'
-
-    session = requests.session()
-
-    login_html = session.get(google_accounts_url)
-    soup_login = BeautifulSoup(login_html.content, 'html.parser').find('form').find_all('input')
-    payload = {}
-    for u in soup_login:
-        if u.has_attr('value'):
-            payload[u['name']] = u['value']
-
-    payload['Email'] = username
-    payload['Passwd'] = password
-
-    auto = login_html.headers.get('X-Auto-Login')
-    follow_up = unquote(unquote(auto)).split('continue=')[-1]
-
-    payload['continue'] = follow_up
-
-    session.post(authentication_url, data=payload)
+    options = Options()
+    options.add_argument('-headless')
+    authorization_url="https://code.earthengine.google.com"
+    uname=username
+    passw=password
+    driver = Firefox(executable_path=os.path.join(pathway,"geckodriver.exe"),firefox_options=options)
+    driver.get(authorization_url)
+    time.sleep(5)
+    username = driver.find_element_by_xpath('//*[@id="identifierId"]')
+    username.send_keys(uname)
+    driver.find_element_by_id("identifierNext").click()
+    time.sleep(5)
+    print('username')
+    passw=driver.find_element_by_name("password").send_keys(passw)
+    driver.find_element_by_id("passwordNext").click()
+    time.sleep(5)
+    print('password')
+    try:
+        driver.find_element_by_xpath("//div[@id='view_container']/form/div[2]/div/div/div/ul/li/div/div[2]/p").click()
+        time.sleep(5)
+        driver.find_element_by_xpath("//div[@id='submit_approve_access']/content/span").click()
+        time.sleep(5)
+    except Exception as e:
+        pass
+    cookies = driver.get_cookies()
+    session = requests.Session()
     return session
-
 
 def __get_upload_url(session):
     # get url and discard; somehow it does not work for the first time
