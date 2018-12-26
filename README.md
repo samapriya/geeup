@@ -9,7 +9,7 @@ This came of the simple need to handle batch uploads of both image assets to col
 * [Getting started](#getting-started)
 * [geeup Simple CLI for Earth Engine Uploads](#geeup-simple-cli-for-earth-engine-uploads)
     * [selenium update](#selenium-update)
-	  * [gee Quota](#gee-quota)
+    * [gee Quota](#gee-quota)
     * [gee Zipshape](#gee-zipshape)
     * [gee upload](#gee-upload)
     * [gee selupload](#gee-selupload)
