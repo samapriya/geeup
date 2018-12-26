@@ -232,6 +232,10 @@ optional arguments:
 
 # Changelog
 
+### v0.0.7
+
+- fixed issues with manifest lib
+
 ### v0.0.6
 
 - Detailed quota readout
