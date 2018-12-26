@@ -36,6 +36,7 @@ from selenium.webdriver.common.by import By
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 lp=os.path.dirname(os.path.realpath(__file__))
+sys.path.append(lp)
 ee.Initialize()
 def selupload(user, source_path, destination_path, manifest=None,metadata_path=None, multipart_upload=False, nodata_value=None, bucket_name=None):
 
