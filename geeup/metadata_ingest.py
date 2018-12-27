@@ -10,14 +10,15 @@ import subprocess
 import json
 import manifest_lib
 import pandas as pd
+import ee
+import requests
+import retrying
 if sys.version_info > (3, 0):
     from urllib.parse import unquote
 else:
     from urllib import unquote
 
-import ee
-import requests
-import retrying
+
 from requests_toolbelt import MultipartEncoder
 from bs4 import BeautifulSoup
 

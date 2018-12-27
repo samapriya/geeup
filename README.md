@@ -80,7 +80,7 @@ To obtain help for a specific functionality, simply call it with _help_ switch, 
 The tool is designed to handle batch uploading of images and tables(shapefiles). While there are image collection where you can batch upload imagery,for vector or shapefiles you have to batch upload them to a folder.
 
 ### selenium update
-This download selenium drivers and places to to your local directory for windows and linux subsystems.
+This download selenium drivers and places to to your local directory for windows and linux subsystems. This is the first step to use selenium supported upload.
 
 ``` geeup update```
 
@@ -231,6 +231,10 @@ optional arguments:
 ```
 
 # Changelog
+
+### v0.0.8
+
+- fixed issues with unused imports
 
 ### v0.0.7
 
