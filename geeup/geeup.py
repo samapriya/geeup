@@ -2,15 +2,12 @@
 
 import argparse,os,ee,sys,platform
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
-from hurry import filesize
-from ee import oauth
 from batch_uploader import upload
 from batch_tuploader import tabup
 from batch_remover import delete
 from sel_tuploader import seltabup
 from metadata_ingest import selupload
 from zipfiles import zipshape
-from hurry import filesize
 from os.path import expanduser
 from planet.api.utils import write_planet_json
 lpath=os.path.dirname(os.path.realpath(__file__))
