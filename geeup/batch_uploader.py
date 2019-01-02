@@ -1,3 +1,48 @@
+__copyright__ = """
+
+    Copyright 2016 Lukasz Tracewski
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+"""
+__license__ = "Apache 2.0"
+
+__Modifications_copyright__ = """
+
+    Copyright 2019 Samapriya Roy
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+"""
+__license__ = "Apache 2.0"
+
+'''
+Modifications to file:
+- Uses selenium based upload instead of simple login
+- Removed multipart upload
+- Uses polling
+'''
+
 import ast
 import csv
 import getpass
@@ -11,7 +56,9 @@ import ast
 import ee
 import requests
 import retrying
-from requests_toolbelt.multipart import encoder
+import poster
+from poster.encode import multipart_encode
+from poster.streaminghttp import register_openers
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver import Firefox
@@ -21,18 +68,14 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-
-if sys.version_info > (3, 0):
-    from urllib.parse import unquote
-else:
-    from urllib import unquote
-
 from google.cloud import storage
-
 from metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 pathway=os.path.dirname(os.path.realpath(__file__))
+sys.path.append(pathway)
+ee.Initialize()
 
-def upload(user, source_path, destination_path, metadata_path=None, multipart_upload=False, nodata_value=None, bucket_name=None, band_names=[]):
+def upload(user, source_path, destination_path, metadata_path=None, nodata_value=None, bucket_name=None, band_names=[]):
     """
     Uploads content of a given directory to GEE. The function first uploads an asset to Google Cloud Storage (GCS)
     and then uses ee.data.startIngestion to put it into GEE, Due to GCS intermediate step, users is asked for
@@ -45,7 +88,6 @@ def upload(user, source_path, destination_path, metadata_path=None, multipart_up
     :param source_path: path to a directory
     :param destination_path: where to upload (absolute path)
     :param metadata_path: (optional) path to file with metadata
-    :param multipart_upload: (optional) alternative mode op upload - use if the other one fails
     :param nodata_value: (optinal) value to burn into raster for missind data in the image
     :return:
     """
@@ -57,7 +99,7 @@ def upload(user, source_path, destination_path, metadata_path=None, multipart_up
     all_images_paths = glob.glob(path)
 
     if len(all_images_paths) == 0:
-        logging.error('%s does not contain any tif images.', path)
+        print(str(path)+' does not contain any tif images.')
         sys.exit(1)
 
     metadata = load_metadata_from_csv(metadata_path) if metadata_path else None
@@ -74,19 +116,19 @@ def upload(user, source_path, destination_path, metadata_path=None, multipart_up
     no_images = len(images_for_upload_path)
 
     if no_images == 0:
-        logging.error('No images found that match %s. Exiting...', path)
+        print('No images found that match '+str(path)+' Exiting...')
         sys.exit(1)
 
     failed_asset_writer = FailedAssetsWriter()
 
     for current_image_no, image_path in enumerate(images_for_upload_path):
-        logging.info('Processing image %d out of %d: %s', current_image_no+1, no_images, image_path)
+        print('Processing image '+str(current_image_no+1)+' out of '+str(no_images)+': '+str(image_path))
         filename = __get_filename_from_path(path=image_path)
 
         asset_full_path = destination_path + '/' + filename
 
         if metadata and not filename in metadata:
-            logging.warning("No metadata exists for image %s: it will not be ingested", filename)
+            print("No metadata exists for image "+str(filename)+" : it will not be ingested")
             failed_asset_writer.writerow([filename, 0, 'Missing metadata'])
             continue
 
@@ -95,8 +137,7 @@ def upload(user, source_path, destination_path, metadata_path=None, multipart_up
         try:
             if user is not None:
                 gsid = __upload_file_gee(session=google_session,
-                                                  file_path=image_path,
-                                                  use_multipart=multipart_upload)
+                                                  file_path=image_path)
             else:
                 gsid = __upload_file_gcs(storage_client, bucket_name, image_path)
 
@@ -106,7 +147,7 @@ def upload(user, source_path, destination_path, metadata_path=None, multipart_up
             submitted_tasks_id[task_id] = filename
             __periodic_check(current_image=current_image_no, period=20, tasks=submitted_tasks_id, writer=failed_asset_writer)
         except Exception as e:
-            logging.exception('Upload of %s has failed.', filename)
+            print('Upload of '+str(filename)+' has failed.')
             failed_asset_writer.writerow([filename, 0, str(e)])
 
     __check_for_failed_tasks_and_report(tasks=submitted_tasks_id, writer=failed_asset_writer)
@@ -133,8 +174,8 @@ def __verify_path_for_upload(path):
     folder = path[:path.rfind('/')]
     response = ee.data.getInfo(folder)
     if not response:
-        logging.error('%s is not a valid destination. Make sure full path is provided e.g. users/user/nameofcollection '
-                      'or projects/myproject/myfolder/newcollection and that you have write access there.', path)
+        print(str(path)+' is not a valid destination. Make sure full path is provided e.g. users/user/nameofcollection '
+                      'or projects/myproject/myfolder/newcollection and that you have write access there.')
         sys.exit(1)
 
 
@@ -145,10 +186,10 @@ def __find_remaining_assets_for_upload(path_to_local_assets, path_remote):
         if len(remote_assets) > 0:
             assets_left_for_upload = set(local_assets) - set(remote_assets)
             if len(assets_left_for_upload) == 0:
-                logging.warning('Collection already exists and contains all assets provided for upload. Exiting ...')
+                print('Collection already exists and contains all assets provided for upload. Exiting ...')
                 sys.exit(1)
 
-            logging.info('Collection already exists. %d assets left for upload to %s.', len(assets_left_for_upload), path_remote)
+            print('Collection already exists. '+str(len(assets_left_for_upload))+' assets left for upload to '+str(path_remote))
             assets_left_for_upload_full_path = [path for path in path_to_local_assets
                                                 if __get_filename_from_path(path) in assets_left_for_upload]
             return assets_left_for_upload_full_path
@@ -175,16 +216,16 @@ def __validate_metadata(path_for_upload, metadata_path):
     missing_keys = keys_in_data - keys_in_metadata
 
     if missing_keys:
-        logging.warning('%d images does not have a corresponding key in metadata', len(missing_keys))
+        print(str(len(missing_keys)+' images does not have a corresponding key in metadata'))
         print('\n'.join(e for e in missing_keys))
     else:
-        logging.info('All images have metadata available')
+        print('All images have metadata available')
 
     if not validation_result.success:
         print('Validation finished with errors. Type "y" to continue, default NO: ')
         choice = input().lower()
         if choice not in ['y', 'yes']:
-            logging.info('Application will terminate')
+            print('Application will terminate')
             exit(1)
 
 
@@ -192,28 +233,29 @@ def __extract_metadata_for_image(filename, metadata):
     if filename in metadata:
         return metadata[filename]
     else:
-        logging.warning('Metadata for %s not found', filename)
+        print('Metadata for '+str(filename)+' not found')
         return None
 
 
 def __get_google_auth_session(username, password):
+    ee.Initialize()
     options = Options()
     options.add_argument('-headless')
     authorization_url="https://code.earthengine.google.com"
-    uname=username
-    passw=password
-    driver = Firefox(executable_path=os.path.join(pathway,"geckodriver.exe"),firefox_options=options)
+    uname=str(username)
+    passw=str(password)
+    driver = Firefox(executable_path=os.path.join(lp,"geckodriver.exe"),firefox_options=options)
     driver.get(authorization_url)
     time.sleep(5)
     username = driver.find_element_by_xpath('//*[@id="identifierId"]')
     username.send_keys(uname)
     driver.find_element_by_id("identifierNext").click()
     time.sleep(5)
-    print('username')
+    #print('username')
     passw=driver.find_element_by_name("password").send_keys(passw)
     driver.find_element_by_id("passwordNext").click()
     time.sleep(5)
-    print('password')
+    #print('password')
     try:
         driver.find_element_by_xpath("//div[@id='view_container']/form/div[2]/div/div/div/ul/li/div/div[2]/p").click()
         time.sleep(5)
@@ -223,37 +265,63 @@ def __get_google_auth_session(username, password):
         pass
     cookies = driver.get_cookies()
     session = requests.Session()
+    for cookie in cookies:
+        session.cookies.set(cookie['name'], cookie['value'])
+    driver.close()
     return session
 
 def __get_upload_url(session):
-    # get url and discard; somehow it does not work for the first time
-    _ = session.get('https://ee-api.appspot.com/assets/upload/geturl?')
-    r = session.get('https://ee-api.appspot.com/assets/upload/geturl?')
-    if r.text.startswith('\n<!DOCTYPE html>'):
-        logging.error('Incorrect credentials. Probably. If you are sure the credentials are OK, refresh the authentication token. '
-                      'If it did not work report a problem. They might have changed something in the Matrix.')
-        sys.exit(1)
-    d = ast.literal_eval(r.text)
-    return d['url']
+    r=session.get("https://code.earthengine.google.com/assets/upload/geturl")
+    try:
+        d = ast.literal_eval(r.text)
+        return d['url']
+    except Exception as e:
+        print(e)
 
 @retrying.retry(retry_on_exception=retry_if_ee_error, wait_exponential_multiplier=1000, wait_exponential_max=4000, stop_max_attempt_number=3)
-def __upload_file_gee(session, file_path, use_multipart):
-    with open(file_path, 'rb') as f:
+def __upload_file_gee(session, file_path):
         upload_url = __get_upload_url(session)
+        class IterableToFileAdapter(object):
+            def __init__(self, iterable):
+                self.iterator = iter(iterable)
+                self.length = iterable.total
 
-        if use_multipart:
-            form = encoder.MultipartEncoder({
-                "documents": (file_path, f, "application/octet-stream"),
-                "composite": "NONE",
-            })
-            headers = {"Prefer": "respond-async", "Content-Type": form.content_type}
-            resp = session.post(upload_url, headers=headers, data=form)
-        else:
-            files = {'file': f}
-            resp = session.post(upload_url, files=files)
+            def read(self, size=-1):
+                return next(self.iterator, b'')
+
+            def __len__(self):
+                return self.length
+
+        # define a helper function simulating the interface of posters multipart_encode()-function
+        # but wrapping its generator with the file-like adapter
+        def multipart_encode_for_requests(params, boundary=None, cb=None):
+            datagen, headers = multipart_encode(params, boundary, cb)
+            return IterableToFileAdapter(datagen), headers
+
+
+
+        # this is your progress callback
+        def progress(param, current, total):
+            if not param:
+                return
+
+            # check out http://tcd.netinf.eu/doc/classnilib_1_1encode_1_1MultipartParam.html
+            # for a complete list of the properties param provides to you
+            calc=float(current)/float(total)*100
+            print ('Uploading '+str(os.path.basename(file_path).split('.')[0])+':   '+str(format(float(calc),'.2f'))+" %", end='\r')
+
+        # generate headers and gata-generator an a requests-compatible format
+        # and provide our progress-callback
+        datagen, headers = multipart_encode_for_requests({
+            "file": open(file_path, 'rb'),
+            "composite": "NONE",
+        }, cb=progress)
+
+        # use the requests-lib to issue a post-request with out data attached
+        resp = session.post(upload_url, data=datagen,headers=headers)
+        #print(resp.content)
 
         gsid = resp.json()[0]
-
         return gsid
 
 @retrying.retry(retry_on_exception=retry_if_ee_error, wait_exponential_multiplier=1000, wait_exponential_max=4000, stop_max_attempt_number=3)
@@ -270,7 +338,7 @@ def __upload_file_gcs(storage_client, bucket_name, image_path):
 
 def __periodic_check(current_image, period, tasks, writer):
     if (current_image + 1) % period == 0:
-        logging.info('Periodic check')
+        print('Periodic check')
         __check_for_failed_tasks_and_report(tasks=tasks, writer=writer)
         # Time to check how many tasks are running!
         __wait_for_tasks_to_complete(waiting_time=10, no_allowed_tasks_running=20)
@@ -288,7 +356,7 @@ def __check_for_failed_tasks_and_report(tasks, writer):
             filename = tasks[task_id]
             error_message = status['error_message']
             writer.writerow([filename, task_id, error_message])
-            logging.error('Ingestion of image %s has failed with message %s', filename, error_message)
+            print('Ingestion of image '+str(filename)+' has failed with message '+str(error_message))
 
     tasks.clear()
 
@@ -316,10 +384,10 @@ def __collection_exist(path):
 
 def __create_image_collection(full_path_to_collection):
     if __collection_exist(full_path_to_collection):
-        logging.warning("Collection %s already exists", full_path_to_collection)
+        print("Collection '+str(full_path_to_collection)+' already exists")
     else:
         ee.data.createAsset({'type': ee.data.ASSET_TYPE_IMAGE_COLL}, full_path_to_collection)
-        logging.info('New collection %s created', full_path_to_collection)
+        print('New collection '+str(full_path_to_collection)+' created')
 
 
 def __get_asset_names_from_collection(collection_path):

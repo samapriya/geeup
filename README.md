@@ -48,22 +48,21 @@ As usual, to print help:
 
 ```
 usage: geeup.py [-h]
-                {update,quota,zipshape,upload,selupload,tabup,seltabup,tasks,delete}
+                {update,quota,zipshape,upload,selupload,seltabup,tasks,delete}
                 ...
 
 Simple Client for Earth Engine Uploads with Selenium Support
 
 positional arguments:
-  {update,quota,zipshape,upload,selupload,tabup,seltabup,tasks,delete}
+  {update,quota,zipshape,upload,selupload,seltabup,tasks,delete}
     update              Updates Selenium drivers for firefox [windows or linux
                         systems]
     quota               Print Earth Engine total quota and used quota
     zipshape            Zips all shapefiles and subsidary files into
                         individual zip files
-    upload              Batch Asset Uploader.
+    upload              Batch Asset Uploader using Selenium
     selupload           Batch Asset Uploader for Planet Items & Assets using
                         Selenium
-    tabup               Batch Table Uploader.
     seltabup            Batch Table Uploader using Selenium.
     tasks               Queries current task status
                         [completed,running,ready,failed,cancelled]
@@ -72,6 +71,7 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+
 ```
 
 To obtain help for a specific functionality, simply call it with _help_ switch, e.g.: `geeup zipshape -h`. If you didn't install geeup, then you can run it just by going to *geeup* directory and running `python geeup.py [arguments go here]`
@@ -174,22 +174,6 @@ Optional named arguments:
                         Google Cloud Storage bucket name.
 ```
 
-### gee table upload
-This tool allows you to batch download tables/shapefiles to a folder. It uses a modified version of the image upload and a wrapper around the earthengine upload cli to achieve this while creating folders if they don't exist and reporting on assets and checking on uploads. This only requires a source, destination and your ee authenticated email address.
-
-```
-usage: geeup tabup [-h] --source SOURCE --dest DEST [-u USER]
-
-optional arguments:
-  -h, --help            show this help message and exit
-
-Required named arguments.:
-  --source SOURCE       Path to the directory with zipped folder for upload.
-  --dest DEST           Destination. Full path for upload to Google Earth
-                        Engine, e.g. users/pinkiepie/myponycollection
-  -u USER, --user USER  Google account name (gmail address).
-```
-
 ### gee seltabup
 This tool allows you to batch download tables/shapefiles to a folder. It uses a modified version of the image upload and a wrapper around the earthengine upload cli to achieve this while creating folders if they don't exist and reporting on assets and checking on uploads. This only requires a source, destination and your ee authenticated email address. This tool also uses selenium to upload the tables.
 
@@ -231,6 +215,12 @@ optional arguments:
 ```
 
 # Changelog
+
+### v0.0.9
+
+- fixed attribution and dependecy issues
+- Included poster to improve streaming uploads
+- All uploads now use selenium
 
 ### v0.0.8
 

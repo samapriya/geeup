@@ -1,7 +1,25 @@
+__copyright__ = """
+
+    Copyright 2019 Samapriya Roy
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+"""
+__license__ = "Apache 2.0"
+
 import requests
 import ast
 import ee
-from requests_toolbelt.multipart import encoder
 from selenium import webdriver
 from selenium.webdriver import Firefox
 from selenium.webdriver.firefox.options import Options
@@ -20,8 +38,9 @@ def seltabup(dirc,uname,destination):
     options = Options()
     options.add_argument('-headless')
     authorization_url="https://code.earthengine.google.com"
-    passw=str(getpass.getpass("Enter your Password:  "))
-    driver = Firefox(executable_path=os.path.join(pathway,"geckodriver.exe"),firefox_options=options)
+    uname=str(username)
+    passw=str(password)
+    driver = Firefox(executable_path=os.path.join(lp,"geckodriver.exe"),firefox_options=options)
     driver.get(authorization_url)
     time.sleep(5)
     username = driver.find_element_by_xpath('//*[@id="identifierId"]')
@@ -51,20 +70,21 @@ def seltabup(dirc,uname,destination):
         file_count = len(files)
         #print(file_count)
         for item in os.listdir(dirc):
-            r=s.get("https://code.earthengine.google.com/assets/upload/geturl")
-            d = ast.literal_eval(r.text)
-            upload_url = d['url']
-            file_path=os.path.join(dirc,item)
-            with open(file_path, 'rb') as f:
+            if item.endswith('.zip'):
+                r=s.get("https://code.earthengine.google.com/assets/upload/geturl")
+                d = ast.literal_eval(r.text)
                 upload_url = d['url']
-                files = {'file': f}
-                resp = s.post(upload_url, files=files)
-                gsid = resp.json()[0]
-                asset_full_path=destination+'/'+item.split('.')[0]
-                #print(asset_full_path)
-                output=subprocess.check_output('earthengine upload table --asset_id '+str(asset_full_path)+' '+str(gsid),shell=True)
-                print('Ingesting '+str(i)+' of '+str(file_count)+' '+str(os.path.basename(asset_full_path))+' task ID: '+str(output).strip())
-                i=i+1
+                file_path=os.path.join(dirc,item)
+                with open(file_path, 'rb') as f:
+                    upload_url = d['url']
+                    files = {'file': f}
+                    resp = s.post(upload_url, files=files)
+                    gsid = resp.json()[0]
+                    asset_full_path=destination+'/'+item.split('.')[0]
+                    #print(asset_full_path)
+                    output=subprocess.check_output('earthengine upload table --asset_id '+str(asset_full_path)+' '+str(gsid),shell=True)
+                    print('Ingesting '+str(i)+' of '+str(file_count)+' '+str(os.path.basename(asset_full_path))+' task ID: '+str(output).strip())
+                    i=i+1
     except Exception as e:
         print(e)
 #authenticate(dirc=r'C:\planet_demo\grid')

@@ -1,3 +1,48 @@
+from __future__ import print_function
+__copyright__ = """
+
+    Copyright 2016 Lukasz Tracewski
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+"""
+__license__ = "Apache 2.0"
+
+__Modifications_copyright__ = """
+
+    Copyright 2019 Samapriya Roy
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+"""
+__license__ = "Apache 2.0"
+
+'''
+Modifications to file:
+- Uses selenium based upload instead of simple login
+- Removed multipart upload
+- Added poster for streaming upload
+'''
 import ast
 import csv
 import getpass
@@ -13,19 +58,11 @@ import pandas as pd
 import ee
 import requests
 import retrying
-if sys.version_info > (3, 0):
-    from urllib.parse import unquote
-else:
-    from urllib import unquote
-
-
-from requests_toolbelt import MultipartEncoder
-from bs4 import BeautifulSoup
-
 from google.cloud import storage
-
+import poster
+from poster.encode import multipart_encode
+from poster.streaminghttp import register_openers
 from metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
-from requests_toolbelt.multipart import encoder
 from selenium import webdriver
 from selenium.webdriver import Firefox
 from selenium.webdriver.firefox.options import Options
@@ -34,29 +71,11 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 lp=os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lp)
 ee.Initialize()
-def selupload(user, source_path, destination_path, manifest=None,metadata_path=None, multipart_upload=False, nodata_value=None, bucket_name=None):
-
-    """
-    Uploads content of a given directory to GEE. The function first uploads an asset to Google Cloud Storage (GCS)
-    and then uses ee.data.startIngestion to put it into GEE, Due to GCS intermediate step, users is asked for
-    Google's account name and password.
-
-    In case any exception happens during the upload, the function will repeat the call a given number of times, after
-    which the error will be propagated further.
-
-    :param user: name of a Google account
-    :param source_path: path to a directory
-    :param destination_path: where to upload (absolute path)
-    :param metadata_path: (optional) path to file with metadata
-    :param multipart_upload: (optional) alternative mode op upload - use if the other one fails
-    :param nodata_value: (optinal) value to burn into raster for missind data in the image
-    :return:
-    """
+def selupload(user, source_path, destination_path, manifest=None,metadata_path=None, nodata_value=None, bucket_name=None):
     submitted_tasks_id = {}
 
     __verify_path_for_upload(destination_path)
@@ -126,8 +145,7 @@ def selupload(user, source_path, destination_path, manifest=None,metadata_path=N
         try:
             if user is not None:
                 gsid = __upload_file_gee(session=google_session,
-                                                  file_path=image_path,
-                                                  use_multipart=multipart_upload)
+                                                  file_path=image_path)
             else:
                 gsid = __upload_file_gcs(storage_client, bucket_name, image_path)
 
@@ -164,7 +182,7 @@ def selupload(user, source_path, destination_path, manifest=None,metadata_path=N
                             json.dump(data, outfile)
                         subprocess.call("earthengine upload_manifest "+'"'+os.path.join(lp,'data.json')+'"',shell=True)
         except Exception as e:
-            print('Upload of %s has failed.', filename)
+            print('Upload of '+str(filename)+' has failed.')
             failed_asset_writer.writerow([filename, 0, str(e)])
 
         __check_for_failed_tasks_and_report(tasks=submitted_tasks_id, writer=failed_asset_writer)
@@ -230,16 +248,16 @@ def __validate_metadata(path_for_upload, metadata_path):
     missing_keys = keys_in_data - keys_in_metadata
 
     if missing_keys:
-        logging.warning('%d images does not have a corresponding key in metadata', len(missing_keys))
+        print(str(len(missing_keys)+' images does not have a corresponding key in metadata'))
         print('\n'.join(e for e in missing_keys))
     else:
-        logging.info('All images have metadata available')
+        print('All images have metadata available')
 
     if not validation_result.success:
         print('Validation finished with errors. Type "y" to continue, default NO: ')
         choice = input().lower()
         if choice not in ['y', 'yes']:
-            logging.info('Application will terminate')
+            print('Application will terminate')
             exit(1)
 
 
@@ -247,7 +265,7 @@ def __extract_metadata_for_image(filename, metadata):
     if filename in metadata:
         return metadata[filename]
     else:
-        logging.warning('Metadata for %s not found', filename)
+        print('Metadata for '+str(filename)+' not found')
         return None
 
 
@@ -294,11 +312,48 @@ def __get_upload_url(session):
         print(e)
 
 @retrying.retry(retry_on_exception=retry_if_ee_error, wait_exponential_multiplier=1000, wait_exponential_max=4000, stop_max_attempt_number=3)
-def __upload_file_gee(session, file_path, use_multipart):
-    with open(file_path, 'rb') as f:
+def __upload_file_gee(session, file_path):
         upload_url = __get_upload_url(session)
-        files = {'file': f}
-        resp = session.post(upload_url, files=files)
+        class IterableToFileAdapter(object):
+            def __init__(self, iterable):
+                self.iterator = iter(iterable)
+                self.length = iterable.total
+
+            def read(self, size=-1):
+                return next(self.iterator, b'')
+
+            def __len__(self):
+                return self.length
+
+        # define a helper function simulating the interface of posters multipart_encode()-function
+        # but wrapping its generator with the file-like adapter
+        def multipart_encode_for_requests(params, boundary=None, cb=None):
+            datagen, headers = multipart_encode(params, boundary, cb)
+            return IterableToFileAdapter(datagen), headers
+
+
+
+        # this is your progress callback
+        def progress(param, current, total):
+            if not param:
+                return
+
+            # check out http://tcd.netinf.eu/doc/classnilib_1_1encode_1_1MultipartParam.html
+            # for a complete list of the properties param provides to you
+            calc=float(current)/float(total)*100
+            print ('Uploading '+str(os.path.basename(file_path).split('.')[0])+':   '+str(format(float(calc),'.2f'))+" %", end='\r')
+
+        # generate headers and gata-generator an a requests-compatible format
+        # and provide our progress-callback
+        datagen, headers = multipart_encode_for_requests({
+            "file": open(file_path, 'rb'),
+            "composite": "NONE",
+        }, cb=progress)
+
+        # use the requests-lib to issue a post-request with out data attached
+        resp = session.post(upload_url, data=datagen,headers=headers)
+        #print(resp.content)
+
         gsid = resp.json()[0]
         return gsid
 
@@ -316,7 +371,7 @@ def __upload_file_gcs(storage_client, bucket_name, image_path):
 
 def __periodic_check(current_image, period, tasks, writer):
     if (current_image + 1) % period == 0:
-        logging.info('Periodic check')
+        print('Periodic check')
         __check_for_failed_tasks_and_report(tasks=tasks, writer=writer)
         # Time to check how many tasks are running!
         __wait_for_tasks_to_complete(waiting_time=10, no_allowed_tasks_running=20)
@@ -334,7 +389,7 @@ def __check_for_failed_tasks_and_report(tasks, writer):
             filename = tasks[task_id]
             error_message = status['error_message']
             writer.writerow([filename, task_id, error_message])
-            logging.error('Ingestion of image %s has failed with message %s', filename, error_message)
+            print('Ingestion of image '+str(filename)+' has failed with message '+str(error_message))
 
     tasks.clear()
 
@@ -362,10 +417,10 @@ def __collection_exist(path):
 
 def __create_image_collection(full_path_to_collection):
     if __collection_exist(full_path_to_collection):
-        logging.warning("Collection %s already exists", full_path_to_collection)
+        print('Collection '+str(full_path_to_collection)+' already exists')
     else:
         ee.data.createAsset({'type': ee.data.ASSET_TYPE_IMAGE_COLL}, full_path_to_collection)
-        logging.info('New collection %s created', full_path_to_collection)
+        print('New collection '+str(full_path_to_collection)+' created')
 
 
 def __get_asset_names_from_collection(collection_path):
@@ -394,5 +449,3 @@ class FailedAssetsWriter(object):
         if self.initialized:
             self.failed_upload_file.close()
             self.initialized = False
-
-# upload(user='vicvanthof@gmail.com', source_path=r'C:\planet_demo\ps\ps4b', destination_path="users/vicvanthof/planet", manifest='PS4B',metadata_path=r'C:\planet_demo\ps\ps4bmeta.csv', multipart_upload=False, nodata_value=None, bucket_name=None)
