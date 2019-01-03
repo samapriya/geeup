@@ -11,3 +11,5 @@ psutil>=5.4.5
 poster>=0.8.1
 selenium>=3.13.0
 pySmartDL>=1.2.5
+pathlib>=1.0.1
+lxml>=4.1.1

@@ -57,9 +57,6 @@ import ast
 import ee
 import requests
 import retrying
-import poster
-from poster.encode import multipart_encode
-from poster.streaminghttp import register_openers
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver import Firefox
@@ -69,7 +66,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from google.cloud import storage
+#from google.cloud import storage
 from metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 pathway=os.path.dirname(os.path.realpath(__file__))
@@ -280,48 +277,11 @@ def __get_upload_url(session):
         print(e)
 
 @retrying.retry(retry_on_exception=retry_if_ee_error, wait_exponential_multiplier=1000, wait_exponential_max=4000, stop_max_attempt_number=3)
-def __upload_file_gee(session, file_path):
+def __upload_file_gee(session, file_path, use_multipart):
+    with open(file_path, 'rb') as f:
         upload_url = __get_upload_url(session)
-        class IterableToFileAdapter(object):
-            def __init__(self, iterable):
-                self.iterator = iter(iterable)
-                self.length = iterable.total
-
-            def read(self, size=-1):
-                return next(self.iterator, b'')
-
-            def __len__(self):
-                return self.length
-
-        # define a helper function simulating the interface of posters multipart_encode()-function
-        # but wrapping its generator with the file-like adapter
-        def multipart_encode_for_requests(params, boundary=None, cb=None):
-            datagen, headers = multipart_encode(params, boundary, cb)
-            return IterableToFileAdapter(datagen), headers
-
-
-
-        # this is your progress callback
-        def progress(param, current, total):
-            if not param:
-                return
-
-            # check out http://tcd.netinf.eu/doc/classnilib_1_1encode_1_1MultipartParam.html
-            # for a complete list of the properties param provides to you
-            calc=float(current)/float(total)*100
-            print ('Uploading '+str(os.path.basename(file_path).split('.')[0])+':   '+str(format(float(calc),'.2f'))+" %", end='\r')
-
-        # generate headers and gata-generator an a requests-compatible format
-        # and provide our progress-callback
-        datagen, headers = multipart_encode_for_requests({
-            "file": open(file_path, 'rb'),
-            "composite": "NONE",
-        }, cb=progress)
-
-        # use the requests-lib to issue a post-request with out data attached
-        resp = session.post(upload_url, data=datagen,headers=headers)
-        #print(resp.content)
-
+        files = {'file': f}
+        resp = session.post(upload_url, files=files)
         gsid = resp.json()[0]
         return gsid
 

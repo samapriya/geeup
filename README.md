@@ -216,12 +216,17 @@ positional arguments:
 optional arguments:
   -h, --help  show this help message and exit
 ```
-
 # Changelog
+
+### v0.1.1
+
+- fixed dependency issues
+- Upload post issues resolved
+- Removed dependency on poster for now
 
 ### v0.0.9
 
-- fixed attribution and dependency issues
+- fixed attribution and dependecy issues
 - Included poster to improve streaming uploads
 - All uploads now use selenium
 
