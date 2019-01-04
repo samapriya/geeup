@@ -69,8 +69,8 @@ from selenium.webdriver.common.by import By
 #from google.cloud import storage
 from metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
-pathway=os.path.dirname(os.path.realpath(__file__))
-sys.path.append(pathway)
+lp=os.path.dirname(os.path.realpath(__file__))
+sys.path.append(lp)
 ee.Initialize()
 
 def upload(user, source_path, destination_path, metadata_path=None, nodata_value=None, bucket_name=None, band_names=[]):
