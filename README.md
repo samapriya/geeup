@@ -218,6 +218,12 @@ optional arguments:
 ```
 # Changelog
 
+### v0.1.3
+
+- fixed issues with extra arguments
+- Upload issue resolved
+- General dependency
+
 ### v0.1.1
 
 - fixed dependency issues

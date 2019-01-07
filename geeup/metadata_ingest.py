@@ -309,7 +309,7 @@ def __get_upload_url(session):
         print(e)
 
 @retrying.retry(retry_on_exception=retry_if_ee_error, wait_exponential_multiplier=1000, wait_exponential_max=4000, stop_max_attempt_number=3)
-def __upload_file_gee(session, file_path, use_multipart):
+def __upload_file_gee(session, file_path):
     with open(file_path, 'rb') as f:
         upload_url = __get_upload_url(session)
         files = {'file': f}
