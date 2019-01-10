@@ -18,7 +18,7 @@ def readme():
         return f.read()
 setuptools.setup(
     name='geeup',
-    version='0.1.3',
+    version='0.1.4',
     packages=find_packages(),
     url='https://github.com/samapriya/geeup',
     install_requires=['earthengine_api >= 0.1.87','requests >= 2.10.0','retrying >= 1.3.3','beautifulsoup4 >= 4.5.1','pandas>=0.23.0','psutil>=5.4.5',

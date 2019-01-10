@@ -218,6 +218,11 @@ optional arguments:
 ```
 # Changelog
 
+### v0.1.4
+
+- OS based geckdriver path fix
+- General improvements
+
 ### v0.1.3
 
 - fixed issues with extra arguments

@@ -274,7 +274,10 @@ def __get_google_auth_session(username, password):
     authorization_url="https://code.earthengine.google.com"
     uname=str(username)
     passw=str(password)
-    driver = Firefox(executable_path=os.path.join(lp,"geckodriver.exe"),firefox_options=options)
+    if os.name=="nt":
+        driver = Firefox(executable_path=os.path.join(lp,"geckodriver.exe"),firefox_options=options)
+    elif os.name=="posix":
+        driver = Firefox(executable_path=os.path.join(lp,"geckodriver"),firefox_options=options)
     driver.get(authorization_url)
     time.sleep(5)
     username = driver.find_element_by_xpath('//*[@id="identifierId"]')
