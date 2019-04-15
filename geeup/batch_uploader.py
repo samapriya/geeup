@@ -56,6 +56,7 @@ import requests
 import ast
 import ee
 import requests
+import subprocess
 import retrying
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -140,10 +141,8 @@ def upload(user, source_path, destination_path, metadata_path=None, nodata_value
                 gsid = __upload_file_gcs(storage_client, bucket_name, image_path)
 
             asset_request = __create_asset_request(asset_full_path, gsid, properties, nodata_value, band_names)
-
-            task_id = __start_ingestion_task(asset_request)
-            submitted_tasks_id[task_id] = filename
-            __periodic_check(current_image=current_image_no, period=20, tasks=submitted_tasks_id, writer=failed_asset_writer)
+            print(asset_full_path)
+            subprocess.call("earthengine upload image "+'"'+gsid+'"'+' --asset_id "'+asset_full_path+'"',shell=True)
         except Exception as e:
             print('Upload of '+str(filename)+' has failed.')
             failed_asset_writer.writerow([filename, 0, str(e)])

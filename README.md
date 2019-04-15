@@ -218,6 +218,11 @@ optional arguments:
 ```
 # Changelog
 
+### v0.1.5
+
+- Fixed issue with gecko driver paths
+- Fixed issue with null uploads using task, switched to ee CLI upload
+
 ### v0.1.4
 
 - OS based geckdriver path fix
