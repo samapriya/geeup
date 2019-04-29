@@ -218,6 +218,10 @@ optional arguments:
 ```
 # Changelog
 
+### v0.1.6
+
+- Fixed issue with [module locations](https://github.com/samapriya/geeup/issues/2)
+
 ### v0.1.5
 
 - Fixed issue with gecko driver paths
