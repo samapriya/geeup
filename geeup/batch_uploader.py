@@ -141,7 +141,7 @@ def upload(user, source_path, destination_path, metadata_path=None, nodata_value
                 gsid = __upload_file_gcs(storage_client, bucket_name, image_path)
 
             asset_request = __create_asset_request(asset_full_path, gsid, properties, nodata_value, band_names)
-            print(asset_full_path)
+            print('Upload started for: '+str(asset_full_path))
             subprocess.call("earthengine upload image "+'"'+gsid+'"'+' --asset_id "'+asset_full_path+'"',shell=True)
         except Exception as e:
             print('Upload of '+str(filename)+' has failed.')

@@ -19,3 +19,5 @@ pack/geeup/batch_uploader.py
 pack/geeup/batch_remover.py
 pack/geeup/__init__.py
 pack/dist/geeup-0.1.6.tar.gz
+pack/dist/geeup-0.1.7-py2.py3-none-any.whl
+pack/dist/geeup-0.1.7.tar.gz
