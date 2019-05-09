@@ -24,7 +24,6 @@ os.chdir(os.path.dirname(os.path.realpath(__file__)))
 from batch_uploader import upload
 from batch_remover import delete
 from sel_tuploader import seltabup
-from metadata_ingest import selupload
 from zipfiles import zipshape
 from os.path import expanduser
 lpath=os.path.dirname(os.path.realpath(__file__))
@@ -84,15 +83,6 @@ def upload_from_parser(args):
            bucket_name=args.bucket,
            band_names=args.bands)
 
-def selupload_from_parser(args):
-    selupload(user=args.user,
-           source_path=args.source,
-           destination_path=args.dest,
-           metadata_path=args.metadata,
-           nodata_value=args.nodata,
-           bucket_name=args.bucket,
-           manifest=args.manifest)
-
 def seltabup_from_parser(args):
     seltabup(uname=args.user,
            dirc=args.source,
@@ -146,19 +136,6 @@ def main(args=None):
     optional_named.add_argument('-b', '--bucket', help='Google Cloud Storage bucket name.')
 
     parser_upload.set_defaults(func=upload_from_parser)
-
-    parser_selupload = subparsers.add_parser('selupload', help='Batch Asset Uploader for Planet Items & Assets using Selenium')
-    required_named = parser_selupload.add_argument_group('Required named arguments.')
-    required_named.add_argument('--source', help='Path to the directory with images for upload.', required=True)
-    required_named.add_argument('--dest', help='Destination. Full path for upload to Google Earth Engine, e.g. users/pinkiepie/myponycollection', required=True)
-    required_named.add_argument('-m', '--metadata', help='Path to CSV with metadata.')
-    required_named.add_argument('-mf','--manifest',help='Manifest type to be used,Choose PS OrthoTile(PSO)|PS OrthoTile DN(PSO_DN)|PS OrthoTile Visual(PSO_V)|PS4Band Analytic(PS4B)|PS4Band DN(PS4B_DN)|PS4Band SR(PS4B_SR)|PS3Band Analytic(PS3B)|PS3Band DN(PS3B_DN)|PS3Band Visual(PS3B_V)|RE OrthoTile (REO)|RE OrthoTile Visual(REO_V)')
-    optional_named = parser_selupload.add_argument_group('Optional named arguments')
-    optional_named.add_argument('--nodata', type=int, help='The value to burn into the raster as NoData (missing data)')
-    required_named.add_argument('-u', '--user', help='Google account name (gmail address).')
-    optional_named.add_argument('-b', '--bucket', help='Google Cloud Storage bucket name.')
-
-    parser_selupload.set_defaults(func=selupload_from_parser)
 
     parser_seltabup = subparsers.add_parser('seltabup', help='Batch Table Uploader using Selenium.')
     required_named = parser_seltabup.add_argument_group('Required named arguments.')
