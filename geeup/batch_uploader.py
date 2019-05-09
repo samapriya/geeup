@@ -67,7 +67,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-#from google.cloud import storage
+from requests_toolbelt import MultipartEncoder
 from metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 lp=os.path.dirname(os.path.realpath(__file__))
@@ -281,11 +281,16 @@ def __get_upload_url(session):
 @retrying.retry(retry_on_exception=retry_if_ee_error, wait_exponential_multiplier=1000, wait_exponential_max=4000, stop_max_attempt_number=3)
 def __upload_file_gee(session, file_path):
     with open(file_path, 'rb') as f:
+        file_name=os.path.basename(file_path)
         upload_url = __get_upload_url(session)
         files = {'file': f}
-        resp = session.post(upload_url, files=files)
-        gsid = resp.json()[0]
-        return gsid
+        m=MultipartEncoder( fields={'image_file':(file_name, f)})
+        try:
+            resp = session.post(upload_url, data=m, headers={'Content-Type': m.content_type})
+            gsid = resp.json()[0]
+            return gsid
+        except Exception as e:
+            print(e)
 
 @retrying.retry(retry_on_exception=retry_if_ee_error, wait_exponential_multiplier=1000, wait_exponential_max=4000, stop_max_attempt_number=3)
 def __upload_file_gcs(storage_client, bucket_name, image_path):

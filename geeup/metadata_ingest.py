@@ -43,6 +43,7 @@ Modifications to file:
 - Removed multipart upload
 - Added poster for streaming upload
 '''
+
 import ast
 import csv
 import getpass
@@ -50,6 +51,8 @@ import glob
 import logging
 import os
 import sys
+lp=os.path.dirname(os.path.realpath(__file__))
+sys.path.append(lp)
 import time
 import subprocess
 import json
@@ -68,9 +71,8 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-os.chdir(os.path.dirname(os.path.realpath(__file__)))
-lp=os.path.dirname(os.path.realpath(__file__))
-sys.path.append(lp)
+from requests_toolbelt import MultipartEncoder
+
 ee.Initialize()
 def selupload(user, source_path, destination_path, manifest=None,metadata_path=None, nodata_value=None, bucket_name=None):
     submitted_tasks_id = {}
@@ -177,7 +179,7 @@ def selupload(user, source_path, destination_path, manifest=None,metadata_path=N
                         json_data = json.dumps(data)
                         with open(os.path.join(lp,'data.json'), 'w') as outfile:
                             json.dump(data, outfile)
-                        subprocess.call("earthengine upload_manifest "+'"'+os.path.join(lp,'data.json')+'"',shell=True)
+                        subprocess.call("earthengine upload image --manifest "+'"'+os.path.join(lp,'data.json')+'"',shell=True)
         except Exception as e:
             print('Upload of '+str(filename)+' has failed.')
             failed_asset_writer.writerow([filename, 0, str(e)])
@@ -314,11 +316,16 @@ def __get_upload_url(session):
 @retrying.retry(retry_on_exception=retry_if_ee_error, wait_exponential_multiplier=1000, wait_exponential_max=4000, stop_max_attempt_number=3)
 def __upload_file_gee(session, file_path):
     with open(file_path, 'rb') as f:
+        file_name=os.path.basename(file_path)
         upload_url = __get_upload_url(session)
         files = {'file': f}
-        resp = session.post(upload_url, files=files)
-        gsid = resp.json()[0]
-        return gsid
+        m=MultipartEncoder( fields={'image_file':(file_name, f)})
+        try:
+            resp = session.post(upload_url, data=m, headers={'Content-Type': m.content_type})
+            gsid = resp.json()[0]
+            return gsid
+        except Exception as e:
+            print(e)
 
 @retrying.retry(retry_on_exception=retry_if_ee_error, wait_exponential_multiplier=1000, wait_exponential_max=4000, stop_max_attempt_number=3)
 def __upload_file_gcs(storage_client, bucket_name, image_path):

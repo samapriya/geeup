@@ -28,6 +28,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from requests_toolbelt import MultipartEncoder
 import time,os,getpass,subprocess
 
 
@@ -78,15 +79,18 @@ def seltabup(dirc,uname,destination):
                 d = ast.literal_eval(r.text)
                 upload_url = d['url']
                 file_path=os.path.join(dirc,item)
+                file_name=os.path.basename(file_path)
                 with open(file_path, 'rb') as f:
                     upload_url = d['url']
-                    files = {'file': f}
-                    resp = s.post(upload_url, files=files)
-                    gsid = resp.json()[0]
-                    asset_full_path=destination+'/'+item.split('.')[0]
-                    #print(asset_full_path)
-                    output=subprocess.check_output('earthengine upload table --asset_id '+str(asset_full_path)+' '+str(gsid),shell=True)
-                    print('Ingesting '+str(i)+' of '+str(file_count)+' '+str(os.path.basename(asset_full_path))+' task ID: '+str(output).strip())
+                    try:
+                        m=MultipartEncoder( fields={'zip_file':(file_name, f)})
+                        resp = session.post(upload_url, data=m, headers={'Content-Type': m.content_type})
+                        gsid = resp.json()[0]
+                        asset_full_path=destination+'/'+item.split('.')[0]
+                        output=subprocess.check_output('earthengine upload table --asset_id '+str(asset_full_path)+' '+str(gsid),shell=True)
+                        print('Ingesting '+str(i)+' of '+str(file_count)+' '+str(os.path.basename(asset_full_path))+' task ID: '+str(output).strip())
+                    except Exception as e:
+                        print(e)
                     i=i+1
     except Exception as e:
         print(e)
