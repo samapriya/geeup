@@ -12,7 +12,6 @@ def geckodown(directory):
     soup=BeautifulSoup(source.encode("utf-8"),'lxml')
     vr=str(soup.title.text.encode("utf-8")).split(' ')[1]
     container="https://github.com/mozilla/geckodriver/releases/download/"+vr+"/geckodriver-"+vr+'-'+comb
-    container="https://github.com/mozilla/geckodriver/releases/download/"+vr+"/"+str(article.text)
     print("Downloading from: "+str(container))
     try:
         url = container
@@ -20,8 +19,8 @@ def geckodown(directory):
         obj = SmartDL(url, dest)
         obj.start()
         path=obj.get_dest()
-        #print(article.text)
-        filepath=os.path.join(directory,article.text)
+        print(os.path.join(directory,'geckodriver-'+vr+'-linux64.zip'))
+        filepath=os.path.join(directory,'geckodriver-'+vr+'-'+comb)
         if (filepath.endswith("tar.gz")):
             tar = tarfile.open(filepath,'r:*')
             tar.extractall(directory)
