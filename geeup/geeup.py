@@ -79,9 +79,7 @@ def upload_from_parser(args):
            source_path=args.source,
            destination_path=args.dest,
            metadata_path=args.metadata,
-           nodata_value=args.nodata,
-           bucket_name=args.bucket,
-           band_names=args.bands)
+           nodata_value=args.nodata)
 
 def seltabup_from_parser(args):
     seltabup(uname=args.user,
@@ -126,14 +124,10 @@ def main(args=None):
     required_named = parser_upload.add_argument_group('Required named arguments.')
     required_named.add_argument('--source', help='Path to the directory with images for upload.', required=True)
     required_named.add_argument('--dest', help='Destination. Full path for upload to Google Earth Engine, e.g. users/pinkiepie/myponycollection', required=True)
+    required_named.add_argument('-m', '--metadata', help='Path to CSV with metadata.',required=True)
     optional_named = parser_upload.add_argument_group('Optional named arguments')
-    optional_named.add_argument('-m', '--metadata', help='Path to CSV with metadata.')
     optional_named.add_argument('--nodata', type=int, help='The value to burn into the raster as NoData (missing data)')
-    optional_named.add_argument('--bands', type=_comma_separated_strings, help='Comma-separated list of names to use for the image bands. Spaces'
-                                                                               'or other special characters are not allowed.')
-
     required_named.add_argument('-u', '--user', help='Google account name (gmail address).')
-    optional_named.add_argument('-b', '--bucket', help='Google Cloud Storage bucket name.')
 
     parser_upload.set_defaults(func=upload_from_parser)
 

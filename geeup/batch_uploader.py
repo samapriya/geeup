@@ -52,10 +52,12 @@ import logging
 import os
 import sys
 import time
+import json
 import requests
 import ast
 import ee
 import requests
+import pandas as pd
 import subprocess
 import retrying
 from bs4 import BeautifulSoup
@@ -74,31 +76,17 @@ lp=os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lp)
 ee.Initialize()
 
-def upload(user, source_path, destination_path, metadata_path=None, nodata_value=None, bucket_name=None, band_names=[]):
-    """
-    Uploads content of a given directory to GEE. The function first uploads an asset to Google Cloud Storage (GCS)
-    and then uses ee.data.startIngestion to put it into GEE, Due to GCS intermediate step, users is asked for
-    Google's account name and password.
+slist=[]
 
-    In case any exception happens during the upload, the function will repeat the call a given number of times, after
-    which the error will be propagated further.
-
-    :param user: name of a Google account
-    :param source_path: path to a directory
-    :param destination_path: where to upload (absolute path)
-    :param metadata_path: (optional) path to file with metadata
-    :param nodata_value: (optinal) value to burn into raster for missind data in the image
-    :return:
-    """
+def upload(user, source_path, destination_path, metadata_path=None, nodata_value=None, bucket_name=None):
     submitted_tasks_id = {}
 
     __verify_path_for_upload(destination_path)
 
     path = os.path.join(os.path.expanduser(source_path), '*.tif')
     all_images_paths = glob.glob(path)
-
     if len(all_images_paths) == 0:
-        print(str(path)+' does not contain any tif images.')
+        print('%s does not contain any tif images.', path)
         sys.exit(1)
 
     metadata = load_metadata_from_csv(metadata_path) if metadata_path else None
@@ -115,7 +103,7 @@ def upload(user, source_path, destination_path, metadata_path=None, nodata_value
     no_images = len(images_for_upload_path)
 
     if no_images == 0:
-        print('No images found that match '+str(path)+' Exiting...')
+        print('No images found that match %s. Exiting...', path)
         sys.exit(1)
 
     failed_asset_writer = FailedAssetsWriter()
@@ -132,7 +120,6 @@ def upload(user, source_path, destination_path, metadata_path=None, nodata_value
             continue
 
         properties = metadata[filename] if metadata else None
-
         try:
             if user is not None:
                 gsid = __upload_file_gee(session=google_session,
@@ -140,32 +127,41 @@ def upload(user, source_path, destination_path, metadata_path=None, nodata_value
             else:
                 gsid = __upload_file_gcs(storage_client, bucket_name, image_path)
 
-            asset_request = __create_asset_request(asset_full_path, gsid, properties, nodata_value, band_names)
-            print('Upload started for: '+str(asset_full_path))
-            subprocess.call("earthengine upload image "+'"'+gsid+'"'+' --asset_id "'+asset_full_path+'"',shell=True)
+            df=pd.read_csv(metadata_path)
+            dd=(df.applymap(type) == str).all(0)
+            for ind, val in dd.iteritems():
+                if val==True:
+                    slist.append(ind)
+            intcol= list(df.select_dtypes(include=['int64']).columns)
+            floatcol = list(df.select_dtypes(include=['float64']).columns)
+            with open(metadata_path, 'r') as f:
+                reader = csv.DictReader(f,delimiter=",")
+                for i, line in enumerate(reader):
+                    if line["id_no"]==os.path.basename(image_path).split('.')[0]:
+                        j={}
+                        for integer in intcol:
+                            value=integer
+                            j[value]=int(line[integer])
+                        for s in slist:
+                            value=s
+                            j[value]=str(line[s])
+                        for f in floatcol:
+                            value=f
+                            j[value]=float(line[f])
+                        # j['id']=destination_path+'/'+line["id_no"]
+                        # j['tilesets'][0]['sources'][0]['primaryPath']=gsid
+                        json_data = json.dumps(j)
+                        main_payload={"id": asset_full_path,"tilesets": [{"sources": [{"primaryPath": gsid,"additionalPaths": []}]}],"properties": j,"missingData": {"value": nodata_value}}
+                        with open(os.path.join(lp,'data.json'), 'w') as outfile:
+                            json.dump(main_payload, outfile)
+                        subprocess.call("earthengine upload image --manifest "+'"'+os.path.join(lp,'data.json')+'"',shell=True)
         except Exception as e:
+            print(e)
             print('Upload of '+str(filename)+' has failed.')
             failed_asset_writer.writerow([filename, 0, str(e)])
 
-    __check_for_failed_tasks_and_report(tasks=submitted_tasks_id, writer=failed_asset_writer)
-    failed_asset_writer.close()
-
-def __create_asset_request(asset_full_path, gsid, properties, nodata_value, band_names):
-    if band_names:
-        band_names = [{'id': name} for name in band_names]
-
-    return {"id": asset_full_path,
-        "tilesets": [
-            {"sources": [
-                {"primaryPath": gsid,
-                 "additionalPaths": []
-                 }
-            ]}
-        ],
-        "bands": band_names,
-        "properties": properties,
-        "missingData": {"value": nodata_value}
-    }
+        __check_for_failed_tasks_and_report(tasks=submitted_tasks_id, writer=failed_asset_writer)
+        failed_asset_writer.close()
 
 def __verify_path_for_upload(path):
     folder = path[:path.rfind('/')]

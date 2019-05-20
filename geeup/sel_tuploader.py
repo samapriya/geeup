@@ -20,6 +20,7 @@ __license__ = "Apache 2.0"
 import requests
 import ast
 import ee
+import sys
 from selenium import webdriver
 from selenium.webdriver import Firefox
 from selenium.webdriver.firefox.options import Options
@@ -30,17 +31,33 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from requests_toolbelt import MultipartEncoder
 import time,os,getpass,subprocess
+lp=os.path.dirname(os.path.realpath(__file__))
+sys.path.append(lp)
+
+def table_exist(path):
+    return True if ee.data.getInfo(path) else False
+
+def folder_exist(path):
+    if ee.data.getInfo(path) and ee.data.getInfo(path)['type']=='Folder':
+        return True
+    else:
+        return False
 
 
-pathway=os.path.dirname(os.path.realpath(__file__))
+def create_image_collection(full_path_to_collection):
+    if folder_exist(full_path_to_collection):
+        print("Folder "+str(full_path_to_collection)+" already exists")
+    else:
+        ee.data.createAsset({'type': ee.data.ASSET_TYPE_FOLDER}, full_path_to_collection)
+        print('New folder '+str(full_path_to_collection)+' created')
 
 def seltabup(dirc,uname,destination):
     ee.Initialize()
     options = Options()
     options.add_argument('-headless')
     authorization_url="https://code.earthengine.google.com"
-    uname=str(username)
-    passw=str(password)
+    passw=getpass.getpass()
+    create_image_collection(destination)
     if os.name=="nt":
         driver = Firefox(executable_path=os.path.join(lp,"geckodriver.exe"),firefox_options=options)
     elif os.name=="posix":
@@ -75,22 +92,28 @@ def seltabup(dirc,uname,destination):
         #print(file_count)
         for item in os.listdir(dirc):
             if item.endswith('.zip'):
-                r=s.get("https://code.earthengine.google.com/assets/upload/geturl")
-                d = ast.literal_eval(r.text)
-                upload_url = d['url']
-                file_path=os.path.join(dirc,item)
-                file_name=os.path.basename(file_path)
-                with open(file_path, 'rb') as f:
+                fpath=os.path.basename(item).split('.')[0]
+                full_path_to_table=str(destination)+'/'+str(fpath)
+                if table_exist(full_path_to_table)==True:
+                    print('Table already exists Skipping: '+str(fpath))
+                    i=i+1
+                else:
+                    r=s.get("https://code.earthengine.google.com/assets/upload/geturl")
+                    d = ast.literal_eval(r.text)
                     upload_url = d['url']
-                    try:
-                        m=MultipartEncoder( fields={'zip_file':(file_name, f)})
-                        resp = session.post(upload_url, data=m, headers={'Content-Type': m.content_type})
-                        gsid = resp.json()[0]
-                        asset_full_path=destination+'/'+item.split('.')[0]
-                        output=subprocess.check_output('earthengine upload table --asset_id '+str(asset_full_path)+' '+str(gsid),shell=True)
-                        print('Ingesting '+str(i)+' of '+str(file_count)+' '+str(os.path.basename(asset_full_path))+' task ID: '+str(output).strip())
-                    except Exception as e:
-                        print(e)
+                    file_path=os.path.join(dirc,item)
+                    file_name=os.path.basename(file_path)
+                    with open(file_path, 'rb') as f:
+                        upload_url = d['url']
+                        try:
+                            m=MultipartEncoder( fields={'zip_file':(file_name, f)})
+                            resp = s.post(upload_url, data=m, headers={'Content-Type': m.content_type})
+                            gsid = resp.json()[0]
+                            asset_full_path=destination+'/'+item.split('.')[0]
+                            output=subprocess.check_output('earthengine upload table --asset_id '+str(asset_full_path)+' '+str(gsid),shell=True)
+                            print('Ingesting '+str(i)+' of '+str(file_count)+' '+str(os.path.basename(asset_full_path))+' task ID: '+str(output).strip())
+                        except Exception as e:
+                            print(e)
                     i=i+1
     except Exception as e:
         print(e)
