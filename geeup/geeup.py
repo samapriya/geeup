@@ -32,10 +32,8 @@ sys.path.append(lpath)
 def update():
     if str(platform.system()) =="Windows":
         os.system("python sel-latest-win.py")
-        print("Updated selenium driver for Windows64")
     elif str(platform.system()) =="Linux":
         os.system("python sel-latest-linux.py")
-        print("Updated selenium driver for Linux64")
     else:
         print("Architecture not recognized")
 def update_from_parser(args):

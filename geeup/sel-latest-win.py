@@ -24,7 +24,7 @@ def geckodown(directory):
             archive.extractall(directory)
         print("Use selenium driver path as "+str(directory))
     except Exception as e:
-        print(e)
+        print('Issues updating with error '+str(e))
 
 geckodown(directory=directory)
 #print(match.li.strong)

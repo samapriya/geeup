@@ -28,6 +28,6 @@ def geckodown(directory):
             #print "Extracted in Current Directory"
             print("Use selenium driver path as "+os.path.join(directory,"geckodriver"))
     except Exception as e:
-        print(e)
+        print('Issues updating with error '+str(e))
 
 geckodown(directory=directory)
