@@ -180,6 +180,11 @@ optional arguments:
 ```
 # Changelog
 
+### v0.2.4
+
+- Made general improvements
+- Better error handling for selenium driver download
+
 ### v0.2.2
 
 - Can now handle generalized metadata (metadata is now required field)
