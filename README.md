@@ -18,11 +18,13 @@ http://doi.org/10.5281/zenodo.3066243
 * [Installation](#installation)
 * [Getting started](#getting-started)
 * [geeup Simple CLI for Earth Engine Uploads](#geeup-simple-cli-for-earth-engine-uploads)
-    * [selenium update](#selenium-update)
+    * [geeup init](#geeup-init)
     * [gee Quota](#gee-quota)
+    * [gee getmeta](#gee-getmeta)
     * [gee Zipshape](#gee-zipshape)
     * [gee upload](#gee-upload)
     * [gee seltabup](#gee-seltabup)
+    * [gee selsetup](#gee-selsetup)
     * [gee tasks](#gee-tasks)
     * [gee delete](#gee-delete)
 
@@ -32,6 +34,21 @@ This assumes that you have native python & pip installed in your system, you can
 ```python``` and then ```pip list```
 
 If you get no errors and you have python 2.7.14 or higher you should be good to go. Please note that I have tested this only on python 2.7.15, but it should run on Python 3.
+
+**This command line tool is dependent on shapely and fiona and as such uses functionality from GDAL**
+For installing GDAL in Ubuntu
+```
+sudo add-apt-repository ppa:ubuntugis/ppa && sudo apt-get update
+sudo apt-get install gdal-bin
+sudo apt-get install python-gdal
+```
+For Windows I found this [guide](https://webcache.googleusercontent.com/search?q=cache:UZWc-pnCgwsJ:https://sandbox.idre.ucla.edu/sandbox/tutorials/installing-gdal-for-windows+&cd=4&hl=en&ct=clnk&gl=us) from UCLA
+
+You can also install the unofficial binary for windows for [gdal here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
+
+Also for Ubuntu Linux I saw that this is necessary before the install
+
+```sudo apt install libcurl4-openssl-dev libssl-dev```
 
 **This also needs earthengine cli to be [installed and authenticated on your system](https://developers.google.com/earth-engine/python_install_manual) and earthengine to be callable in your command line or terminal**
 
@@ -69,8 +86,11 @@ positional arguments:
     quota               Print Earth Engine total quota and used quota
     zipshape            Zips all shapefiles and subsidary files into
                         individual zip files
+    getmeta             Generates generalized metadata for all rasters in folder
     upload              Batch Asset Uploader using Selenium
     seltabup            Batch Table Uploader using Selenium.
+    selsetup            Non headless setup for new google account, use if upload
+                        throws errors
     tasks               Queries current task status
                         [completed,running,ready,failed,cancelled]
     delete              Deletes collection and all items inside. Supports
@@ -86,10 +106,10 @@ To obtain help for specific functionality, simply call it with _help_ switch, e.
 ## geeup Simple CLI for Earth Engine Uploads
 The tool is designed to handle batch uploading of images and tables(shapefiles). While there are image collection where you can batch upload imagery, for vector or shapefiles you have to batch upload them to a folder.
 
-### selenium update
+### geeup init
 **This is a key step since all upload function depends on this step, so make sure you run this**. This downloads selenium driver and places to your local directory for windows and Linux subsystems. This is the first step to use selenium supported upload.
 
-``` geeup update```
+``` geeup init```
 
 ### gee Quota
 Just a simple tool to print your earth engine quota quickly.
@@ -114,6 +134,21 @@ Required named arguments.:
   --input INPUT    Path to the input directory with all shape files
   --output OUTPUT  Destination folder Full path where shp, shx, prj and dbf
                    files if present in input will be zipped and stored
+```
+
+### gee getmeta
+This script generates a generalized metadata using information parsed from gdalinfo and metadata properties. For now it generates metadata with image name, x and y dimension of images, the pixel resolution and the number of bands.
+
+```
+usage: geeup getmeta [-h] --input INPUT --metadata METADATA
+
+optional arguments:
+  -h, --help       show this help message and exit
+
+Required named arguments.:
+  --input INPUT        Path to the input directory with all raster files
+  --metadata METADATA  Full path to export metadata.csv file
+
 ```
 
 ### gee upload
@@ -155,6 +190,11 @@ Required named arguments.:
   -u USER, --user USER  Google account name (gmail address).
 ```
 
+### gee selsetup
+Once in a while the geckodriver requires manual input before signing into the google earth engine, this tool will allow you to interact with the initialization of Google Earth Engine code editor window. It allows the user to specify the account they want to use, and should only be needed once.
+
+```geeup selsetup```
+
 ### gee tasks
 This script counts all currently running, ready, completed, failed and canceled tasks along with failed tasks. This tool is linked to your google earth engine account with which you initialized the earth engine client. This takes no argument.
 
@@ -179,6 +219,15 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 # Changelog
+
+### v0.2.5
+
+- Now allows for downloading geckodriver for macos Fix to [Issue 10](https://github.com/samapriya/geeup/issues/10)
+- Now includes a metadata tool to generate a generalized metadata for any raster to allow upload.
+Fix to [Issue 7](https://github.com/samapriya/geeup/issues/7)
+- Changed from geeup update to init to signify initialization
+- Added selsetup this tool allows for setting up the gecko driver with your account incase there are issues uploading
+- Better error handling for selenium driver download
 
 ### v0.2.4
 

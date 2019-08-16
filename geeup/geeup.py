@@ -25,6 +25,7 @@ from batch_uploader import upload
 from batch_remover import delete
 from sel_tuploader import seltabup
 from zipfiles import zipshape
+from getmeta import getmeta
 from os.path import expanduser
 lpath=os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lpath)
@@ -34,10 +35,18 @@ def update():
         os.system("python sel-latest-win.py")
     elif str(platform.system()) =="Linux":
         os.system("python sel-latest-linux.py")
+    elif str(platform.system()) =="darwin":
+        os.system("python sel-latest-mac.py")
     else:
         print("Architecture not recognized")
-def update_from_parser(args):
+def init_from_parser(args):
     update()
+
+def selsetup():
+    os.system("python sel_setup.py")
+
+def selsetup_from_parser(args):
+    selsetup()
 
 suffixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 def humansize(nbytes):
@@ -59,6 +68,9 @@ def quota_from_parser(args):
 
 def zipshape_from_parser(args):
     zipshape(directory=args.input,export=args.output)
+
+def getmeta_from_parser(args):
+    getmeta(indir=args.input,mfile=args.metadata)
 
 def _comma_separated_strings(string):
   """Parses an input consisting of comma-separated strings.
@@ -106,8 +118,11 @@ def main(args=None):
 
     subparsers = parser.add_subparsers()
 
-    parser_update=subparsers.add_parser('update',help='Updates Selenium drivers for firefox [windows or linux systems]')
-    parser_update.set_defaults(func=update_from_parser)
+    parser_init=subparsers.add_parser('init',help='Initializes the tool by downloading and updating selenium drivers for firefox')
+    parser_init.set_defaults(func=init_from_parser)
+
+    parser_selsetup = subparsers.add_parser('selsetup', help='Non headless setup for new google account, use if upload throws errors')
+    parser_selsetup.set_defaults(func=selsetup_from_parser)
 
     parser_quota = subparsers.add_parser('quota', help='Print Earth Engine total quota and used quota')
     parser_quota.set_defaults(func=quota_from_parser)
@@ -117,6 +132,12 @@ def main(args=None):
     required_named.add_argument('--input', help='Path to the input directory with all shape files', required=True)
     required_named.add_argument('--output', help='Destination folder Full path where shp, shx, prj and dbf files if present in input will be zipped and stored', required=True)
     parser_zipshape.set_defaults(func=zipshape_from_parser)
+
+    parser_getmeta = subparsers.add_parser('getmeta', help='Creates a generalized metadata for rasters in folder')
+    required_named = parser_getmeta.add_argument_group('Required named arguments.')
+    required_named.add_argument('--input', help='Path to the input directory with all raster files', required=True)
+    required_named.add_argument('--metadata', help='Full path to export metadata.csv file', required=True)
+    parser_getmeta.set_defaults(func=getmeta_from_parser)
 
     parser_upload = subparsers.add_parser('upload', help='Batch Asset Uploader using Selenium')
     required_named = parser_upload.add_argument_group('Required named arguments.')

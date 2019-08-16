@@ -18,10 +18,10 @@ def readme():
         return f.read()
 setuptools.setup(
     name='geeup',
-    version='0.2.2',
+    version='0.2.5',
     packages=find_packages(),
     url='https://github.com/samapriya/geeup',
-    install_requires=['earthengine_api >= 0.1.87','requests >= 2.10.0','retrying >= 1.3.3','beautifulsoup4 >= 4.5.1',
+    install_requires=['earthengine_api >= 0.1.175','requests >= 2.10.0','retrying >= 1.3.3','beautifulsoup4 >= 4.5.1',
     'pandas>=0.23.0','psutil>=5.4.5','requests_toolbelt >= 0.7.0','pytest >= 3.0.0','future >= 0.16.0',
     'google-cloud-storage >= 1.1.1','selenium>=3.13.0','pySmartDL==1.2.5;python_version<"3.4"',
     'pySmartDL>=1.3.1;python_version>"3.4"','pathlib>=1.0.1','lxml>=4.1.1','oauth2client>=4.1.3'],
