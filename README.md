@@ -81,8 +81,7 @@ Simple Client for Earth Engine Uploads with Selenium Support
 
 positional arguments:
   {update,quota,zipshape,upload,selupload,seltabup,tasks,delete}
-    update              Updates Selenium drivers for firefox [windows or linux
-                        systems]
+    update              Updates Selenium drivers for firefox
     quota               Print Earth Engine total quota and used quota
     zipshape            Zips all shapefiles and subsidary files into
                         individual zip files
