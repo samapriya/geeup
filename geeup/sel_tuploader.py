@@ -60,7 +60,7 @@ def seltabup(dirc,uname,destination):
     create_image_collection(destination)
     if os.name=="nt":
         driver = Firefox(executable_path=os.path.join(lp,"geckodriver.exe"),firefox_options=options)
-    elif os.name=="posix":
+    else:
         driver = Firefox(executable_path=os.path.join(lp,"geckodriver"),firefox_options=options)
     driver.get(authorization_url)
     time.sleep(5)

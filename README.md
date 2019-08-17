@@ -219,6 +219,10 @@ optional arguments:
 ```
 # Changelog
 
+### v0.2.6
+
+- Fixed geckodriver path to handle macos Fix to [Issue 10](https://github.com/samapriya/geeup/issues/10)
+
 ### v0.2.5
 
 - Now allows for downloading geckodriver for macos Fix to [Issue 10](https://github.com/samapriya/geeup/issues/10)
