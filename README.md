@@ -219,6 +219,10 @@ optional arguments:
 ```
 # Changelog
 
+### v0.2.7
+
+- Fix to handle case senstive platform type for all os Fix to [Issue 11](https://github.com/samapriya/geeup/issues/11)
+
 ### v0.2.6
 
 - Fixed geckodriver path to handle macos Fix to [Issue 10](https://github.com/samapriya/geeup/issues/10)

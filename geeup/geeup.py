@@ -31,11 +31,11 @@ lpath=os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lpath)
 
 def update():
-    if str(platform.system()) =="Windows":
+    if str(platform.system().lower()) =="windows":
         os.system("python sel-latest-win.py")
-    elif str(platform.system()) =="Linux":
+    elif str(platform.system().lower()) =="linux":
         os.system("python sel-latest-linux.py")
-    elif str(platform.system()) =="darwin":
+    elif str(platform.system().lower()) =="darwin":
         os.system("python sel-latest-mac.py")
     else:
         print("Architecture not recognized")
