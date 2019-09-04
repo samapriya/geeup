@@ -110,7 +110,7 @@ def seltabup(dirc,uname,destination):
                             resp = s.post(upload_url, data=m, headers={'Content-Type': m.content_type})
                             gsid = resp.json()[0]
                             asset_full_path=destination+'/'+item.split('.')[0]
-                            output=subprocess.check_output('earthengine upload table --asset_id '+str(asset_full_path)+' '+str(gsid),shell=True)
+                            output=subprocess.check_output('earthengine --no-use_cloud_api upload table --asset_id '+str(asset_full_path)+' '+str(gsid),shell=True)
                             print('Ingesting '+str(i)+' of '+str(file_count)+' '+str(os.path.basename(asset_full_path))+' task ID: '+str(output).strip())
                         except Exception as e:
                             print(e)

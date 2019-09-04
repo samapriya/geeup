@@ -154,7 +154,7 @@ def upload(user, source_path, destination_path, metadata_path=None, nodata_value
                         main_payload={"id": asset_full_path,"tilesets": [{"sources": [{"primaryPath": gsid,"additionalPaths": []}]}],"properties": j,"missingData": {"value": nodata_value}}
                         with open(os.path.join(lp,'data.json'), 'w') as outfile:
                             json.dump(main_payload, outfile)
-                        subprocess.call("earthengine upload image --manifest "+'"'+os.path.join(lp,'data.json')+'"',shell=True)
+                        subprocess.call("earthengine --no-use_cloud_api upload image --manifest "+'"'+os.path.join(lp,'data.json')+'"',shell=True)
         except Exception as e:
             print(e)
             print('Upload of '+str(filename)+' has failed.')

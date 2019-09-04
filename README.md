@@ -219,6 +219,10 @@ optional arguments:
 ```
 # Changelog
 
+### v0.2.9
+
+- Fixed issues caused by --no-use_cloud_api in earthengine-api package
+
 ### v0.2.7
 
 - Fix to handle case senstive platform type for all os Fix to [Issue 11](https://github.com/samapriya/geeup/issues/11)
