@@ -70,7 +70,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from requests_toolbelt import MultipartEncoder
-from metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
+from .metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 lp=os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lp)

@@ -219,20 +219,20 @@ optional arguments:
 ```
 # Changelog
 
-### v0.2.9
+### v0.3.0
+- Fixed [issue 13](https://github.com/samapriya/geeup/issues/13) non relative import.
+- Fixed issues with package import.
 
+### v0.2.9
 - Fixed issues caused by --no-use_cloud_api in earthengine-api package
 
 ### v0.2.7
-
 - Fix to handle case senstive platform type for all os Fix to [Issue 11](https://github.com/samapriya/geeup/issues/11)
 
 ### v0.2.6
-
 - Fixed geckodriver path to handle macos Fix to [Issue 10](https://github.com/samapriya/geeup/issues/10)
 
 ### v0.2.5
-
 - Now allows for downloading geckodriver for macos Fix to [Issue 10](https://github.com/samapriya/geeup/issues/10)
 - Now includes a metadata tool to generate a generalized metadata for any raster to allow upload.
 Fix to [Issue 7](https://github.com/samapriya/geeup/issues/7)
@@ -241,78 +241,63 @@ Fix to [Issue 7](https://github.com/samapriya/geeup/issues/7)
 - Better error handling for selenium driver download
 
 ### v0.2.4
-
 - Made general improvements
 - Better error handling for selenium driver download
 
 ### v0.2.2
-
 - Can now handle generalized metadata (metadata is now required field)
 - Fixed issues with table upload
 - Overall code optimization and handle streaming upload
 
 ### v0.1.9
-
 - Changes to handle PyDL installation for Py2 and Py3
 - Removed Planet uploader to make tool more generalized
 
 ### v0.1.8
-
 - Multipart encoder using requests toolbelt for streaming upload
 - Changed manifest upload methodology to match changes in earthengine-api
 
 ### v0.1.6
-
 - Fixed issue with [module locations](https://github.com/samapriya/geeup/issues/2)
 
 ### v0.1.5
-
 - Fixed issue with gecko driver paths
 - Fixed issue with null uploads using task, switched to ee CLI upload
 
 ### v0.1.4
-
 - OS based geckdriver path fix
 - General improvements
 
 ### v0.1.3
-
 - fixed issues with extra arguments
 - Upload issue resolved
 - General dependency
 
 ### v0.1.1
-
 - fixed dependency issues
 - Upload post issues resolved
 - Removed dependency on poster for now
 
 ### v0.0.9
-
 - fixed attribution and dependecy issues
 - Included poster to improve streaming uploads
 - All uploads now use selenium
 
 ### v0.0.8
-
 - fixed issues with unused imports
 
 ### v0.0.7
-
 - fixed issues with manifest lib
 
 ### v0.0.6
-
 - Detailed quota readout
 - Uses selenium based uploader to upload images
 - Avoids issues with python auth for upload
 
 ### v0.0.5
-
 - Removed unnecessary library imports
 - Minor improvements and updated readme
 
 ### v0.0.4
-
 - Improved valid table name check before upload
 - Improvements to earth engine quota tool for more accurate quota and human readable
