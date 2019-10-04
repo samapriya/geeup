@@ -219,6 +219,9 @@ optional arguments:
 ```
 # Changelog
 
+### v0.3.1
+- Fixed issue with raw_input and input for selsetup.
+
 ### v0.3.0
 - Fixed [issue 13](https://github.com/samapriya/geeup/issues/13) non relative import.
 - Fixed issues with package import.

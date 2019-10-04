@@ -8,7 +8,10 @@ from selenium import webdriver
 pathway=os.path.dirname(os.path.realpath(__file__))
 def authenticate():
     authorization_url="https://code.earthengine.google.com"
-    uname=str(raw_input("Enter your Username:  "))
+    try:
+        uname=str(raw_input("Enter your Username:  "))
+    except Exception as e:
+        uname=str(input("Enter your Username:  "))
     passw=str(getpass.getpass("Enter your Password:  "))
     driver = webdriver.Firefox(executable_path=os.path.join(pathway,"geckodriver.exe"))
     driver.get(authorization_url)
