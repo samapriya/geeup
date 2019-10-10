@@ -1,6 +1,6 @@
 # geeup: Simple CLI for Earth Engine Uploads with Selenium Support &nbsp; [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Use%20porder%20CLI%20with%20@planetlabs%20new%20ordersv2%20API&url=https://github.com/samapriya/geeup)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3473534.svg)](https://doi.org/10.5281/zenodo.3473534)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3369484.svg)](https://doi.org/10.5281/zenodo.3369484)
 [![PyPI version](https://badge.fury.io/py/geeup.svg)](https://badge.fury.io/py/geeup)
 ![Build Status](https://img.shields.io/badge/dynamic/json.svg?label=downloads&url=https%3A%2F%2Fpypistats.org%2Fapi%2Fpackages%2Fgeeup%2Frecent%3Fperiod%3Dmonth&query=%24.data.last_month&colorB=blue&suffix=%2fmonth)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -10,12 +10,13 @@ This tool came of the simple need to handle batch uploads of both image assets t
 -If you find this tool useful, star and cite it as below
 
 ```
-Samapriya Roy. (2019, October 4). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (Version 0.3.1). Zenodo.
-http://doi.org/10.5281/zenodo.3473534
+Samapriya Roy. (2019, August 16). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (Version 0.2.5). Zenodo.
+http://doi.org/10.5281/zenodo.3369484
 ```
 
 ## Table of contents
 * [Installation](#installation)
+* [Windows Setup](#windows-setup)
 * [Getting started](#getting-started)
 * [geeup Simple CLI for Earth Engine Uploads](#geeup-simple-cli-for-earth-engine-uploads)
     * [geeup init](#geeup-init)
@@ -35,16 +36,35 @@ This assumes that you have native python & pip installed in your system, you can
 
 If you get no errors and you have python 2.7.14 or higher you should be good to go. Please note that I have tested this only on python 2.7.15, but it should run on Python 3.
 
-**This command line tool is dependent on shapely and fiona and as such uses functionality from GDAL**
+**This command line tool is dependent on functionality from GDAL**
 For installing GDAL in Ubuntu
 ```
 sudo add-apt-repository ppa:ubuntugis/ppa && sudo apt-get update
 sudo apt-get install gdal-bin
 sudo apt-get install python-gdal
 ```
-For Windows I found this [guide](https://webcache.googleusercontent.com/search?q=cache:UZWc-pnCgwsJ:https://sandbox.idre.ucla.edu/sandbox/tutorials/installing-gdal-for-windows+&cd=4&hl=en&ct=clnk&gl=us) from UCLA
+## Windows Setup
+Shapely and a few other libraries are notoriously difficult to install on windows machines so follow the steps mentioned here **before installing porder**. You can download and install shapely and other libraries from the [Unofficial Wheel files from here](https://www.lfd.uci.edu/~gohlke/pythonlibs) download depending on the python version you have. **Do this only once you have install GDAL**. I would recommend the steps mentioned above to get the GDAL properly installed. However I am including instructions to using a precompiled version of GDAL similar to the other libraries on windows. You can test to see if you have gdal by simply running
 
-You can also install the unofficial binary for windows for [gdal here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)
+```gdalinfo```
+
+in your command prompt. If you get a read out and not an error message you are good to go. If you don't have gdal try Option 1,2 or 3 in that order and that will install gdal along with the other libraries
+
+#### Option 1:
+Starting from porder v0.4.5 onwards:
+
+Simply run ```geeup -h``` after installation. This should go fetch the extra libraries you need and install them. Once installation is complete, the porder help page will show up. This should save you from the few steps below.
+
+#### Option 2:
+If this does not work or you get an unexpected error try the following commands. You can also use these commands if you simply want to update these libraries.
+
+```
+pipwin refresh
+pipwin install gdal
+```
+
+#### Option 3
+For Windows I also found this [guide](https://webcache.googleusercontent.com/search?q=cache:UZWc-pnCgwsJ:https://sandbox.idre.ucla.edu/sandbox/tutorials/installing-gdal-for-windows+&cd=4&hl=en&ct=clnk&gl=us) from UCLA
 
 Also for Ubuntu Linux I saw that this is necessary before the install
 
@@ -221,9 +241,11 @@ optional arguments:
 
 ### v0.3.1
 - Fixed issue with raw_input and input for selsetup.
+- Fixed selenium path for windows and other platforms.
+- General improvements to ReadMe
 
 ### v0.3.0
-- Fixed [issue 13](https://github.com/samapriya/geeup/issues/13) non relative import.
+- Fixed (issue 13)[https://github.com/samapriya/geeup/issues/13] non relative import.
 - Fixed issues with package import.
 
 ### v0.2.9

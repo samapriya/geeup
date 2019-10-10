@@ -13,7 +13,10 @@ def authenticate():
     except Exception as e:
         uname=str(input("Enter your Username:  "))
     passw=str(getpass.getpass("Enter your Password:  "))
-    driver = webdriver.Firefox(executable_path=os.path.join(pathway,"geckodriver.exe"))
+    if os.name=="nt":
+        driver = Firefox(executable_path=os.path.join(lp,"geckodriver.exe"),firefox_options=options)
+    else:
+        driver = Firefox(executable_path=os.path.join(lp,"geckodriver"),firefox_options=options)
     driver.get(authorization_url)
     time.sleep(2)
     try:

@@ -19,14 +19,43 @@ __license__ = "Apache 2.0"
 
 #! /usr/bin/env python
 
-import argparse,os,ee,sys,platform
+import argparse,os,ee,sys,platform,subprocess,time
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
+from os.path import expanduser
+if str(platform.system().lower()) == "windows":
+    try:
+        import pipwin
+        '''Check if the pipwin cache is old: useful if you are upgrading porder on windows
+        [This section looks if the pipwin cache is older six months]
+        '''
+        home_dir = expanduser("~")
+        fullpath=os.path.join(home_dir, ".pipwin")
+        file_mod_time = os.stat(fullpath).st_mtime
+        if int((time.time() - file_mod_time) / 60) > 262800:
+            print('Refreshing your pipwin cache')
+            subprocess.call('pipwin refresh', shell=True)
+    except ImportError:
+        subprocess.call('pip install pipwin', shell=True)
+        subprocess.call('pipwin refresh', shell=True)
+    except Exception as e:
+        print(e)
+    try:
+        import gdal
+    except ImportError:
+        subprocess.call('pipwin install gdal==2.4.1', shell=True)
+    except Exception as e:
+        print(e)
+    try:
+        import pandas
+    except ImportError:
+        subprocess.call('pipwin install pandas', shell=True)
+    except Exception as e:
+        print(e)
 from batch_uploader import upload
 from batch_remover import delete
 from sel_tuploader import seltabup
 from zipfiles import zipshape
 from getmeta import getmeta
-from os.path import expanduser
 lpath=os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lpath)
 
