@@ -239,6 +239,9 @@ optional arguments:
 ```
 # Changelog
 
+### v0.3.2
+- Fixed issue with selsetup.
+
 ### v0.3.1
 - Fixed issue with raw_input and input for selsetup.
 - Fixed selenium path for windows and other platforms.

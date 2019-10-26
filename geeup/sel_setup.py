@@ -3,7 +3,14 @@ import time
 import os
 import getpass
 from selenium import webdriver
-
+from selenium import webdriver
+from selenium.webdriver import Firefox
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 pathway=os.path.dirname(os.path.realpath(__file__))
 def authenticate():
@@ -13,10 +20,11 @@ def authenticate():
     except Exception as e:
         uname=str(input("Enter your Username:  "))
     passw=str(getpass.getpass("Enter your Password:  "))
+    options=Options()
     if os.name=="nt":
-        driver = Firefox(executable_path=os.path.join(lp,"geckodriver.exe"),firefox_options=options)
+        driver = Firefox(executable_path=os.path.join(pathway,"geckodriver.exe"),firefox_options=options)
     else:
-        driver = Firefox(executable_path=os.path.join(lp,"geckodriver"),firefox_options=options)
+        driver = Firefox(executable_path=os.path.join(pathway,"geckodriver"),firefox_options=options)
     driver.get(authorization_url)
     time.sleep(2)
     try:
