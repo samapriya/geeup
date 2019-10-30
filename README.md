@@ -239,6 +239,9 @@ optional arguments:
 ```
 # Changelog
 
+### v0.3.3
+- Added fix for handling no data in manifests while uploading.
+
 ### v0.3.2
 - Fixed issue with selsetup.
 

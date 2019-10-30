@@ -151,7 +151,10 @@ def upload(user, source_path, destination_path, metadata_path=None, nodata_value
                         # j['id']=destination_path+'/'+line["id_no"]
                         # j['tilesets'][0]['sources'][0]['primaryPath']=gsid
                         json_data = json.dumps(j)
-                        main_payload={"id": asset_full_path,"tilesets": [{"sources": [{"primaryPath": gsid,"additionalPaths": []}]}],"properties": j,"missingData": {"value": nodata_value}}
+                        if nodata_value is not None:
+                            main_payload={"id": asset_full_path,"tilesets": [{"sources": [{"primaryPath": gsid,"additionalPaths": []}]}],"properties": j,"missingData":{"value":nodata_value}}
+                        else:
+                            main_payload={"id": asset_full_path,"tilesets": [{"sources": [{"primaryPath": gsid,"additionalPaths": []}]}],"properties": j}
                         with open(os.path.join(lp,'data.json'), 'w') as outfile:
                             json.dump(main_payload, outfile)
                         subprocess.call("earthengine --no-use_cloud_api upload image --manifest "+'"'+os.path.join(lp,'data.json')+'"',shell=True)

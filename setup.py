@@ -22,7 +22,7 @@ def readme():
 
 setuptools.setup(
     name="geeup",
-    version="0.3.2",
+    version="0.3.3",
     packages=find_packages(),
     url="https://github.com/samapriya/geeup",
     install_requires=[
