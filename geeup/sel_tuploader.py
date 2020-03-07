@@ -38,7 +38,7 @@ def table_exist(path):
     return True if ee.data.getInfo(path) else False
 
 def folder_exist(path):
-    if ee.data.getInfo(path) and ee.data.getInfo(path)['type']=='Folder':
+    if ee.data.getInfo(path) and ee.data.getInfo(path)['type']=='FOLDER':
         return True
     else:
         return False
@@ -55,31 +55,30 @@ def seltabup(dirc,uname,destination):
     ee.Initialize()
     options = Options()
     options.add_argument('-headless')
-    authorization_url="https://code.earthengine.google.com"
     passw=getpass.getpass()
     create_image_collection(destination)
     if os.name=="nt":
         driver = Firefox(executable_path=os.path.join(lp,"geckodriver.exe"),firefox_options=options)
     else:
         driver = Firefox(executable_path=os.path.join(lp,"geckodriver"),firefox_options=options)
-    driver.get(authorization_url)
-    time.sleep(5)
-    username = driver.find_element_by_xpath('//*[@id="identifierId"]')
-    username.send_keys(uname)
-    driver.find_element_by_id("identifierNext").click()
-    time.sleep(5)
-    #print('username')
-    passw=driver.find_element_by_name("password").send_keys(passw)
-    driver.find_element_by_id("passwordNext").click()
-    time.sleep(5)
-    #print('password')
     try:
-        driver.find_element_by_xpath("//div[@id='view_container']/form/div[2]/div/div/div/ul/li/div/div[2]/p").click()
+        # Using stackoverflow for third-party login & redirect
+        driver.get('https://stackoverflow.com/users/signup?ssrc=head&returnurl=%2fusers%2fstory%2fcurrent%27')
         time.sleep(5)
-        driver.find_element_by_xpath("//div[@id='submit_approve_access']/content/span").click()
+        driver.find_element_by_xpath('//*[@id="openid-buttons"]/button[1]').click()
         time.sleep(5)
+        driver.find_element_by_xpath('//input[@type="email"]').send_keys(uname)
+        driver.find_element_by_xpath("//div[@id='identifierNext']/span/span").click()
+        time.sleep(5)
+        driver.find_element_by_xpath('//input[@type="password"]').send_keys(passw)
+        driver.find_element_by_xpath('//*[@id="passwordNext"]').click()
+        time.sleep(5)
+        driver.get('https://code.earthengine.google.com')
+        time.sleep(8)
     except Exception as e:
-        pass
+        print(e)
+        driver.close()
+        sys.exit('Failed to setup & use selenium')
     cookies = driver.get_cookies()
     s = requests.Session()
     for cookie in cookies:
@@ -110,7 +109,7 @@ def seltabup(dirc,uname,destination):
                             resp = s.post(upload_url, data=m, headers={'Content-Type': m.content_type})
                             gsid = resp.json()[0]
                             asset_full_path=destination+'/'+item.split('.')[0]
-                            output=subprocess.check_output('earthengine --no-use_cloud_api upload table --asset_id '+str(asset_full_path)+' '+str(gsid),shell=True)
+                            output=subprocess.check_output('earthengine --no-use_cloud_api upload table --asset_id '+str(asset_full_path)+' '+str(gsid),shell=True).decode('ascii')
                             print('Ingesting '+str(i)+' of '+str(file_count)+' '+str(os.path.basename(asset_full_path))+' task ID: '+str(output).strip())
                         except Exception as e:
                             print(e)

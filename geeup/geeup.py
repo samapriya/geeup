@@ -26,23 +26,23 @@ if str(platform.system().lower()) == "windows":
     try:
         import pipwin
         '''Check if the pipwin cache is old: useful if you are upgrading porder on windows
-        [This section looks if the pipwin cache is older six months]
+        [This section looks if the pipwin cache is older than two weeks]
         '''
         home_dir = expanduser("~")
         fullpath=os.path.join(home_dir, ".pipwin")
         file_mod_time = os.stat(fullpath).st_mtime
-        if int((time.time() - file_mod_time) / 60) > 262800:
+        if int((time.time() - file_mod_time) / 60) > 20160:
             print('Refreshing your pipwin cache')
             subprocess.call('pipwin refresh', shell=True)
     except ImportError:
-        subprocess.call('pip install pipwin', shell=True)
+        subprocess.call('python'+str(version)+' -m pip install pipwin==0.4.7', shell=True)
         subprocess.call('pipwin refresh', shell=True)
     except Exception as e:
         print(e)
     try:
         import gdal
     except ImportError:
-        subprocess.call('pipwin install gdal==2.4.1', shell=True)
+        subprocess.call('pipwin install gdal', shell=True)
     except Exception as e:
         print(e)
     try:
@@ -51,13 +51,14 @@ if str(platform.system().lower()) == "windows":
         subprocess.call('pipwin install pandas', shell=True)
     except Exception as e:
         print(e)
-from batch_uploader import upload
-from batch_remover import delete
-from sel_tuploader import seltabup
-from zipfiles import zipshape
-from getmeta import getmeta
+from .batch_uploader import upload
+from .batch_remover import delete
+from .sel_tuploader import seltabup
+from .zipfiles import zipshape
+from .getmeta import getmeta
 lpath=os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lpath)
+
 
 def update():
     if str(platform.system().lower()) =="windows":
@@ -195,8 +196,11 @@ def main(args=None):
 
     args = parser.parse_args()
 
-    #ee.Initialize()
-    args.func(args)
+    try:
+        func = args.func
+    except AttributeError:
+        parser.error("too few arguments")
+    func(args)
 
 if __name__ == '__main__':
     main()

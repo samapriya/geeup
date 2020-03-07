@@ -85,7 +85,7 @@ python setup.py install
 ```
 For Linux use sudo or try ```pip install geeup --user```.
 
-Installation is an optional step; the application can also be run directly by executing geeup.py script. The advantage of having it installed is that geeup can be executed as any command line tool. I recommend installation within a virtual environment. If you don't want to install, browse into the geeup folder and try ```python geeup.py``` to get to the same result.
+I recommend installation within a virtual environment. Find more information on [creating virtual environments here](https://docs.python.org/3/library/venv.html).
 
 
 ## Getting started
@@ -238,6 +238,11 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 # Changelog
+
+### v0.3.4
+- Supports python3 only since v0.3.4
+- Added stackoverflow based auth fix for some users [Issue 13](https://github.com/samapriya/geeup/issues/13) and [Issue 16](https://github.com/samapriya/geeup/issues/16).
+- General improvements.
 
 ### v0.3.3
 - Added fix for handling no data in manifests while uploading.

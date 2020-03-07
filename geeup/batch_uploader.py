@@ -70,7 +70,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from requests_toolbelt import MultipartEncoder
-from metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
+from .metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 lp=os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lp)
@@ -237,31 +237,30 @@ def __get_google_auth_session(username, password):
     ee.Initialize()
     options = Options()
     options.add_argument('-headless')
-    authorization_url="https://code.earthengine.google.com"
     uname=str(username)
     passw=str(password)
     if os.name=="nt":
         driver = Firefox(executable_path=os.path.join(lp,"geckodriver.exe"),firefox_options=options)
     else:
         driver = Firefox(executable_path=os.path.join(lp,"geckodriver"),firefox_options=options)
-    driver.get(authorization_url)
-    time.sleep(5)
-    username = driver.find_element_by_xpath('//*[@id="identifierId"]')
-    username.send_keys(uname)
-    driver.find_element_by_id("identifierNext").click()
-    time.sleep(5)
-    #print('username')
-    passw=driver.find_element_by_name("password").send_keys(passw)
-    driver.find_element_by_id("passwordNext").click()
-    time.sleep(5)
-    #print('password')
     try:
-        driver.find_element_by_xpath("//div[@id='view_container']/form/div[2]/div/div/div/ul/li/div/div[2]/p").click()
+        # Using stackoverflow for third-party login & redirect
+        driver.get('https://stackoverflow.com/users/signup?ssrc=head&returnurl=%2fusers%2fstory%2fcurrent%27')
         time.sleep(5)
-        driver.find_element_by_xpath("//div[@id='submit_approve_access']/content/span").click()
+        driver.find_element_by_xpath('//*[@id="openid-buttons"]/button[1]').click()
         time.sleep(5)
+        driver.find_element_by_xpath('//input[@type="email"]').send_keys(uname)
+        driver.find_element_by_xpath("//div[@id='identifierNext']/span/span").click()
+        time.sleep(5)
+        driver.find_element_by_xpath('//input[@type="password"]').send_keys(passw)
+        driver.find_element_by_xpath('//*[@id="passwordNext"]').click()
+        time.sleep(5)
+        driver.get('https://code.earthengine.google.com')
+        time.sleep(8)
     except Exception as e:
-        pass
+        print(e)
+        driver.close()
+        sys.exit('Failed to setup & use selenium')
     cookies = driver.get_cookies()
     session = requests.Session()
     for cookie in cookies:

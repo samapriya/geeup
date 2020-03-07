@@ -1,7 +1,9 @@
 import requests
 import time
 import os
+import ast
 import getpass
+import sys
 from selenium import webdriver
 from selenium import webdriver
 from selenium.webdriver import Firefox
@@ -14,7 +16,6 @@ from selenium.webdriver.common.by import By
 
 pathway=os.path.dirname(os.path.realpath(__file__))
 def authenticate():
-    authorization_url="https://code.earthengine.google.com"
     try:
         uname=str(raw_input("Enter your Username:  "))
     except Exception as e:
@@ -25,31 +26,34 @@ def authenticate():
         driver = Firefox(executable_path=os.path.join(pathway,"geckodriver.exe"),firefox_options=options)
     else:
         driver = Firefox(executable_path=os.path.join(pathway,"geckodriver"),firefox_options=options)
-    driver.get(authorization_url)
-    time.sleep(2)
     try:
-        username = driver.find_element_by_xpath('//*[@id="identifierId"]')
-        username.send_keys(uname)
-        driver.find_element_by_id("identifierNext").click()
+        # Using stackoverflow for third-party login & redirect
+        driver.get('https://stackoverflow.com/users/signup?ssrc=head&returnurl=%2fusers%2fstory%2fcurrent%27')
         time.sleep(5)
-        passw=driver.find_element_by_name("password").send_keys(passw)
-        driver.find_element_by_id("passwordNext").click()
+        driver.find_element_by_xpath('//*[@id="openid-buttons"]/button[1]').click()
         time.sleep(5)
-        driver.find_element_by_xpath("//div[@id='view_container']/form/div[2]/div/div/div/ul/li/div/div[2]/p").click()
+        driver.find_element_by_xpath('//input[@type="email"]').send_keys(uname)
+        driver.find_element_by_xpath("//div[@id='identifierNext']/span/span").click()
         time.sleep(5)
-        driver.find_element_by_xpath("//div[@id='submit_approve_access']/content/span").click()
+        driver.find_element_by_xpath('//input[@type="password"]').send_keys(passw)
+        driver.find_element_by_xpath('//*[@id="passwordNext"]').click()
         time.sleep(5)
-        driver.find_element_by_xpath("(.//*[normalize-space(text()) and normalize-space(.)='terms of service'])[1]/following::span[2]").click()
-        time.sleep(3)
-        driver.find_element_by_id("profileIdentifier").click()
-        time.sleep(2)
-        driver.find_element_by_xpath("(.//*[normalize-space(text()) and normalize-space(.)='Earth Engine Code Editor'])[1]/following::div[13]").click()
+        driver.get('https://code.earthengine.google.com')
+        time.sleep(8)
     except Exception as e:
-        pass
+        print(e)
+        driver.close()
+        sys.exit('Failed to setup Selenium profile')
     cookies = driver.get_cookies()
     s = requests.Session()
     for cookie in cookies:
         s.cookies.set(cookie['name'], cookie['value'])
-    print('\n'+'Selenium Setup complete with Google Profile')
+    r=s.get("https://code.earthengine.google.com/assets/upload/geturl")
+    try:
+        d = ast.literal_eval(r.text)
+        if d['url']:
+            print('\n'+'Selenium Setup complete with Google Profile')
+    except Exception as e:
+        print(e)
     driver.close()
 authenticate()

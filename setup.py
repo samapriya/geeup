@@ -22,7 +22,7 @@ def readme():
 
 setuptools.setup(
     name="geeup",
-    version="0.3.3",
+    version="0.3.4",
     packages=find_packages(),
     url="https://github.com/samapriya/geeup",
     install_requires=[
@@ -52,10 +52,10 @@ setuptools.setup(
         "Intended Audience :: Science/Research",
         "Natural Language :: English",
         "License :: OSI Approved :: Apache Software License",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: GIS",
     ),

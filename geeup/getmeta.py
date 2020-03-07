@@ -12,7 +12,7 @@ def getmeta(indir,mfile):
     i=1
     flength=len([name for name in os.listdir(indir) if name.endswith('.tif')])
     with open(mfile,'w') as csvfile:
-        writer=csv.DictWriter(csvfile,fieldnames=["id_no", "xsize", "ysize", "pixel_resolution","num_bands"], delimiter=',')
+        writer=csv.DictWriter(csvfile,fieldnames=["id_no", "xsize", "ysize", "pixel_resolution","num_bands"], delimiter=',',lineterminator='\n')
         writer.writeheader()
     for filename in os.listdir(indir):
         if filename.endswith('.tif'):
@@ -34,5 +34,5 @@ def getmeta(indir,mfile):
             except Exception as e:
                 print(e)
                 i=i+1
-# getmeta(indir=r'C:\planet_demo\dbwater\water_mask_2017_v1',
-#     mfile=r'C:\planet_demo\rmeta.csv')
+##getmeta(indir=r'C:\planet_demo\dbwater\water_mask_2017_v1',
+##    mfile=r'C:\planet_demo\rmeta.csv')
