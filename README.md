@@ -1,4 +1,4 @@
-# geeup: Simple CLI for Earth Engine Uploads with Selenium Support &nbsp; [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Use%20porder%20CLI%20with%20@planetlabs%20new%20ordersv2%20API&url=https://github.com/samapriya/geeup)
+# geeup: Simple CLI for Earth Engine Uploads with Selenium Support &nbsp; [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Use%20geeup%20CLI%20with%20@GEE%20for%20uploads&url=https://github.com/samapriya/geeup)
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3731865.svg)](https://doi.org/10.5281/zenodo.3731865)
 [![PyPI version](https://badge.fury.io/py/geeup.svg)](https://badge.fury.io/py/geeup)
@@ -34,7 +34,8 @@ This assumes that you have native python & pip installed in your system, you can
 
 ```python``` and then ```pip list```
 
-If you get no errors and you have python 2.7.14 or higher you should be good to go. Please note that I have tested this only on python 2.7.15, but it should run on Python 3.
+**geeup now only support Python v3.4 or higher from geeup version 0.3.3**
+
 
 **This command line tool is dependent on functionality from GDAL**
 For installing GDAL in Ubuntu
@@ -51,7 +52,7 @@ Shapely and a few other libraries are notoriously difficult to install on window
 in your command prompt. If you get a read out and not an error message you are good to go. If you don't have gdal try Option 1,2 or 3 in that order and that will install gdal along with the other libraries
 
 #### Option 1:
-Starting from porder v0.4.5 onwards:
+Starting from geeup v0.3.4 onwards:
 
 Simply run ```geeup -h``` after installation. This should go fetch the extra libraries you need and install them. Once installation is complete, the porder help page will show up. This should save you from the few steps below.
 
