@@ -239,9 +239,10 @@ optional arguments:
 ```
 # Changelog
 
-### v0.3.5
+### v0.3.5-v0.3.6
 - Fixed downloader for pipwin for [release >= 0.4.8](https://github.com/lepisma/pipwin/pull/41)
 - Improved overall package installation for windows
+- Check pipwin import version to get release 0.4.9
 
 ### v0.3.4
 - Supports python3 only since v0.3.4

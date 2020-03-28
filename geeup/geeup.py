@@ -23,8 +23,14 @@ import argparse,os,ee,sys,platform,subprocess,time
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 from os.path import expanduser
 if str(platform.system().lower()) == "windows":
+    version =sys.version_info[0]
     try:
         import pipwin
+        if pipwin.__version__=='0.4.9':
+            pass
+        else:
+            subprocess.call('python'+str(version)+' -m pip install pipwin==0.4.9', shell=True)
+            subprocess.call('pipwin refresh', shell=True)
         '''Check if the pipwin cache is old: useful if you are upgrading porder on windows
         [This section looks if the pipwin cache is older than two weeks]
         '''
