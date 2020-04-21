@@ -58,7 +58,6 @@ if str(platform.system().lower()) == "windows":
     except Exception as e:
         print(e)
 from .batch_uploader import upload
-from .batch_remover import delete
 from .sel_tuploader import seltabup
 from .zipfiles import zipshape
 from .getmeta import getmeta
@@ -145,6 +144,12 @@ def tasks():
 def tasks_from_parser(args):
     tasks()
 
+def delete(ids):
+    try:
+        print('Recursively deleting path: {}'.format(ids))
+        subprocess.call('earthengine --no-use_cloud_api rm -r '+ids)
+    except Exception as e:
+        print(e)
 def delete_collection_from_parser(args):
     delete(args.id)
 

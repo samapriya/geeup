@@ -240,6 +240,13 @@ optional arguments:
 ```
 # Changelog
 
+### v0.3.7
+- Revisions to account for changes to API and client library 0.1.215
+- Now checks vertex count for each shapefile and logs warning with those exceeding million vertices while zipping.
+- Uses table manifest to perform table uploads designed to be more robust.
+- Simpler recursive delete functionality.
+- Overall General improvements.
+
 ### v0.3.5-v0.3.6
 - Fixed downloader for pipwin for [release >= 0.4.8](https://github.com/lepisma/pipwin/pull/41)
 - Improved overall package installation for windows
