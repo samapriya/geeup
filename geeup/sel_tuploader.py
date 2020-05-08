@@ -121,7 +121,7 @@ def seltabup(dirc,uname,destination):
                             if asset_full_path.startswith('projects'):
                                 asset_full_path='projects/earthengine-legacy/assets/'+asset_full_path
                             elif asset_full_path.startswith('users'):
-                                asset_full_path='users/earthengine-legacy/assets'+asset_full_path
+                                asset_full_path='projects/earthengine-legacy/assets/'+asset_full_path
                             main_payload=  {"name": asset_full_path,
                                 "sources": [
                                   {
