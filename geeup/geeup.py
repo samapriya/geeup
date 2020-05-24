@@ -18,9 +18,11 @@ __copyright__ = """
 __license__ = "Apache 2.0"
 
 #! /usr/bin/env python
-
+import pkg_resources
+import requests
 import argparse,os,ee,sys,platform,subprocess,time
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
+from bs4 import BeautifulSoup
 from os.path import expanduser
 if str(platform.system().lower()) == "windows":
     version =sys.version_info[0]
@@ -64,6 +66,33 @@ from .getmeta import getmeta
 lpath=os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lpath)
 
+
+# Get package version
+def geeup_version():
+    url = "https://pypi.org/project/geeup/"
+    source = requests.get(url)
+    html_content = source.text
+    soup = BeautifulSoup(html_content, "html.parser")
+    company = soup.find("h1")
+    if (
+        not pkg_resources.get_distribution("geeup").version
+        == company.string.strip().split(" ")[-1]
+    ):
+        print(
+            "\n"
+            + "========================================================================="
+        )
+        print(
+            "Current version of geeup is {} upgrade to lastest version: {}".format(
+                pkg_resources.get_distribution("geeup").version,
+                company.string.strip().split(" ")[-1],
+            )
+        )
+        print(
+            "========================================================================="
+        )
+
+geeup_version()
 
 def update():
     if str(platform.system().lower()) =="windows":

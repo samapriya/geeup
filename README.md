@@ -240,6 +240,10 @@ optional arguments:
 ```
 # Changelog
 
+### v0.4.0
+- Updated earthengine API library requirements to 0.1.222
+- Added version check tool for auto version check with PyPI
+   
 ### v0.3.7
 - Revisions to account for changes to API and client library 0.1.215
 - Now checks vertex count for each shapefile and logs warning with those exceeding million vertices while zipping.
