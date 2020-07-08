@@ -33,7 +33,7 @@ def authenticate():
         driver.find_element_by_xpath('//*[@id="openid-buttons"]/button[1]').click()
         time.sleep(5)
         driver.find_element_by_xpath('//input[@type="email"]').send_keys(uname)
-        driver.find_element_by_xpath("//div[@id='identifierNext']/span/span").click()
+        driver.find_element_by_xpath("//div[@id='identifierNext']").click()
         time.sleep(5)
         driver.find_element_by_xpath('//input[@type="password"]').send_keys(passw)
         driver.find_element_by_xpath('//*[@id="passwordNext"]').click()
@@ -49,11 +49,14 @@ def authenticate():
     for cookie in cookies:
         s.cookies.set(cookie['name'], cookie['value'])
     r=s.get("https://code.earthengine.google.com/assets/upload/geturl")
-    try:
-        d = ast.literal_eval(r.text)
-        if d['url']:
-            print('\n'+'Selenium Setup complete with Google Profile')
-    except Exception as e:
-        print(e)
+    if r.status_code ==200:
+        try:
+            d = ast.literal_eval(r.text)
+            if d['url']:
+                print('\n'+'Selenium Setup complete with Google Profile')
+        except Exception as e:
+            print(e)
+    else:
+        print('Authentication failed for GEE account')
     driver.close()
 authenticate()

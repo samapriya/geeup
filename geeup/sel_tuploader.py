@@ -22,125 +22,156 @@ import ast
 import ee
 import sys
 import json
-from selenium import webdriver
 from selenium.webdriver import Firefox
 from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
 from requests_toolbelt import MultipartEncoder
-import time,os,getpass,subprocess
-lp=os.path.dirname(os.path.realpath(__file__))
+import time
+import os
+import getpass
+import subprocess
+
+lp = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lp)
 ee.Initialize()
 
-def table_exist(path):
-    return True if ee.data.getInfo(path) else False
-
-def folder_exist(path):
-    if ee.data.getInfo(path) and ee.data.getInfo(path)['type']=='FOLDER':
-        return True
-    else:
-        return False
+table_exists = []
+gee_table_exists = []
 
 
-def create_image_collection(full_path_to_collection):
-    if folder_exist(full_path_to_collection):
-        print("Folder "+str(full_path_to_collection)+" already exists")
-    else:
-        ee.data.createAsset({'type': ee.data.ASSET_TYPE_FOLDER}, full_path_to_collection)
-        print('New folder '+str(full_path_to_collection)+' created')
-
-table_exists=[]
-gee_table_exists=[]
-def seltabup(dirc,uname,destination):
+def seltabup(dirc, uname, destination):
     ee.Initialize()
     for (root, directories, files) in os.walk(dirc):
         for filename in files:
-            if filename.endswith('.zip'):
-                table_exists.append(filename.split('.zip')[0])
-    if ee.data.getInfo(destination) and ee.data.getInfo(destination)['type']=='FOLDER':
-        children = ee.data.getList({'id': destination})
-        for child in children:
-            gee_table_exists.append(child['id'].split('/')[-1])
-    diff_set=set(table_exists)-set(gee_table_exists)
-    if len(diff_set)!=0:
+            if filename.endswith(".zip"):
+                table_exists.append(filename.split(".zip")[0])
+    try:
+        destination_info = ee.data.getAsset(destination + "/")
+        full_path_to_collection = destination_info["name"]
+        if destination_info["name"] and destination_info["type"].lower() == "folder":
+            print("Folder exists: {}".format(destination_info["id"]))
+            children = ee.data.listAssets({"parent": full_path_to_collection})
+            for child in children["assets"]:
+                gee_table_exists.append(child["id"].split("/")[-1])
+    except Exception as e:
+        full_path_to_collection = (
+            destination.rsplit("/", 1)[0] + "/" + destination.split("/")[-1]
+        )
+        print("Creating a folder {}".format(full_path_to_collection))
+        try:
+            ee.data.createAsset(
+                {"type": ee.data.ASSET_TYPE_FOLDER_CLOUD}, full_path_to_collection
+            )
+        except:
+            ee.data.createAsset(
+                {"type": ee.data.ASSET_TYPE_FOLDER}, full_path_to_collection
+            )
+    diff_set = set(table_exists) - set(gee_table_exists)
+    if len(diff_set) != 0:
         options = Options()
-        options.add_argument('-headless')
-        passw=getpass.getpass()
-        create_image_collection(destination)
-        if os.name=="nt":
-            driver = Firefox(executable_path=os.path.join(lp,"geckodriver.exe"),firefox_options=options)
+        options.add_argument("-headless")
+        passw = getpass.getpass()
+        if os.name == "nt":
+            driver = Firefox(
+                executable_path=os.path.join(lp, "geckodriver.exe"),
+                firefox_options=options,
+            )
         else:
-            driver = Firefox(executable_path=os.path.join(lp,"geckodriver"),firefox_options=options)
+            driver = Firefox(
+                executable_path=os.path.join(lp, "geckodriver"), firefox_options=options
+            )
         try:
             # Using stackoverflow for third-party login & redirect
-            driver.get('https://stackoverflow.com/users/signup?ssrc=head&returnurl=%2fusers%2fstory%2fcurrent%27')
+            driver.get(
+                "https://stackoverflow.com/users/signup?ssrc=head&returnurl=%2fusers%2fstory%2fcurrent%27"
+            )
             time.sleep(5)
             driver.find_element_by_xpath('//*[@id="openid-buttons"]/button[1]').click()
             time.sleep(5)
             driver.find_element_by_xpath('//input[@type="email"]').send_keys(uname)
-            driver.find_element_by_xpath("//div[@id='identifierNext']/span/span").click()
+            driver.find_element_by_xpath("//div[@id='identifierNext']").click()
             time.sleep(5)
             driver.find_element_by_xpath('//input[@type="password"]').send_keys(passw)
             driver.find_element_by_xpath('//*[@id="passwordNext"]').click()
             time.sleep(5)
-            driver.get('https://code.earthengine.google.com')
+            driver.get("https://code.earthengine.google.com")
             time.sleep(8)
         except Exception as e:
             print(e)
             driver.close()
-            sys.exit('Failed to setup & use selenium')
+            sys.exit("Failed to setup & use selenium")
         cookies = driver.get_cookies()
         s = requests.Session()
         for cookie in cookies:
-            s.cookies.set(cookie['name'], cookie['value'])
+            s.cookies.set(cookie["name"], cookie["value"])
         driver.close()
-        try:
-            i=1
-            file_count = len(diff_set)
-            for item in list(diff_set):
-                full_path_to_table=os.path.join(root,item+'.zip')
-                file_name=item+'.zip'
-                if table_exist(full_path_to_table)==True:
-                    print('Table already exists Skipping: '+str(fpath))
-                    i=i+1
-                else:
-                    r=s.get("https://code.earthengine.google.com/assets/upload/geturl")
+        auth_check = s.get("https://code.earthengine.google.com")
+        if auth_check.status_code == 200:
+            try:
+                i = 1
+                file_count = len(diff_set)
+                for item in list(diff_set):
+                    full_path_to_table = os.path.join(root, item + ".zip")
+                    file_name = item + ".zip"
+                    asset_full_path = full_path_to_collection + "/" + item.split(".")[0]
+                    r = s.get(
+                        "https://code.earthengine.google.com/assets/upload/geturl"
+                    )
                     d = ast.literal_eval(r.text)
-                    upload_url = d['url']
-                    with open(full_path_to_table, 'rb') as f:
-                        upload_url = d['url']
+                    upload_url = d["url"]
+                    with open(full_path_to_table, "rb") as f:
+                        upload_url = d["url"]
                         try:
-                            m=MultipartEncoder( fields={'zip_file':(file_name, f)})
-                            resp = s.post(upload_url, data=m, headers={'Content-Type': m.content_type})
+                            m = MultipartEncoder(fields={"zip_file": (file_name, f)})
+                            resp = s.post(
+                                upload_url,
+                                data=m,
+                                headers={"Content-Type": m.content_type},
+                            )
                             gsid = resp.json()[0]
-                            asset_full_path=destination+'/'+item.split('.')[0]
-                            if asset_full_path.startswith('projects'):
-                                asset_full_path='projects/earthengine-legacy/assets/'+asset_full_path
-                            elif asset_full_path.startswith('users'):
-                                asset_full_path='projects/earthengine-legacy/assets/'+asset_full_path
-                            main_payload=  {"name": asset_full_path,
+                            asset_full_path = (
+                                full_path_to_collection + "/" + item.split(".")[0]
+                            )
+                            main_payload = {
+                                "name": asset_full_path,
                                 "sources": [
-                                  {
-                                  "charset": "UTF-8",
-                                  "maxErrorMeters": 1,
-                                  "maxVertices": 1000000,
-                                  "uris": [gsid]
-                                }
-                              ]
+                                    {
+                                        "charset": "UTF-8",
+                                        "maxErrorMeters": 1,
+                                        "maxVertices": 1000000,
+                                        "uris": [gsid],
+                                    }
+                                ],
                             }
-                            with open(os.path.join(lp,'data.json'), 'w') as outfile:
+                            with open(os.path.join(lp, "data.json"), "w") as outfile:
                                 json.dump(main_payload, outfile)
-                            output=subprocess.check_output("earthengine upload table --manifest "+'"'+os.path.join(lp,'data.json')+'"',shell=True)
-                            print('Ingesting '+str(i)+' of '+str(file_count)+' '+str(os.path.basename(asset_full_path))+' Task Id: '+output.decode('ascii').strip().split(' ')[-1])
+                            output = subprocess.check_output(
+                                "earthengine upload table --manifest "
+                                + '"'
+                                + os.path.join(lp, "data.json")
+                                + '"',
+                                shell=True,
+                            )
+                            print(
+                                "Ingesting "
+                                + str(i)
+                                + " of "
+                                + str(file_count)
+                                + " "
+                                + str(os.path.basename(asset_full_path))
+                                + " Task Id: "
+                                + output.decode("ascii").strip().split(" ")[-1]
+                            )
                         except Exception as e:
                             print(e)
-                    i=i+1
-        except Exception as e:
-            print(e)
-    elif len(diff_set)==0:
-        print('All assets already copied')
-#authenticate(dirc=r'C:\planet_demo\grid')
+                        i = i + 1
+            except Exception as e:
+                print(e)
+            except (KeyboardInterrupt, SystemExit) as e:
+                sys.exit("Program escaped by User")
+        else:
+            print("Authentication Failed for GEE account")
+    elif len(diff_set) == 0:
+        print("All assets already copied")
+
+
+# authenticate(dirc=r'C:\planet_demo\grid')

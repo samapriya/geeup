@@ -240,10 +240,16 @@ optional arguments:
 ```
 # Changelog
 
+### v0.4.1
+- Fixed selenium parser issue [Issue 19](https://github.com/samapriya/geeup/issues/19)
+- Implemented Cloud API fix for table uploads
+- Improved Cloud API fix for Imagery upload with improved manifest handling
+- Improvement and code cleanup
+
 ### v0.4.0
 - Updated earthengine API library requirements to 0.1.222
 - Added version check tool for auto version check with PyPI
-   
+
 ### v0.3.7
 - Revisions to account for changes to API and client library 0.1.215
 - Now checks vertex count for each shapefile and logs warning with those exceeding million vertices while zipping.
