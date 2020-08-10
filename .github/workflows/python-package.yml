@@ -31,6 +31,8 @@ jobs:
         pip install flake8 pytest pipwin pandas wheel
         pip install poetry
         pip install --no-build-isolation pendulum==2.1.0
+        sudo apt-get install gdal-bin
+        sudo apt-get install python-gdal
         pipwin refresh
     - name: Test package
       run: |
