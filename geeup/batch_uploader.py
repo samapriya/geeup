@@ -69,7 +69,7 @@ from .metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 lp = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lp)
-ee.Initialize()
+
 
 slist = []
 
@@ -82,6 +82,7 @@ def upload(
     nodata_value=None,
     bucket_name=None,
 ):
+    ee.Initialize()
 
     __verify_path_for_upload(destination_path)
 

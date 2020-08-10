@@ -32,7 +32,6 @@ import subprocess
 
 lp = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lp)
-ee.Initialize()
 
 table_exists = []
 gee_table_exists = []
