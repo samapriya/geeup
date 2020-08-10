@@ -1,14 +1,14 @@
 from __future__ import print_function
-try:
-    from osgeo import gdal
-except ImportError:
-    import gdal
 import os
 import math
 import csv
 
 
 def getmeta(indir,mfile):
+    try:
+        from osgeo import gdal
+    except ImportError:
+        import gdal
     i=1
     flength=len([name for name in os.listdir(indir) if name.endswith('.tif')])
     with open(mfile,'w') as csvfile:
