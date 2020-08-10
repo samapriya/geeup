@@ -32,10 +32,6 @@ jobs:
         pip install flake8 pytest pipwin pandas wheel
         pip install poetry
         pipwin refresh
-    - name: "[Custom] [Linux] ccache"
-    if: runner.os == 'ubuntu-latest':
-    run: |
-      sudo apt install ccache libcurl4-openssl-dev libgdal-dev libproj-dev libgeos-dev
     - name: Test package
       run: |
         python setup.py install
