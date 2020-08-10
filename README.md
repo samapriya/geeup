@@ -241,6 +241,10 @@ optional arguments:
 ```
 # Changelog
 
+### v0.4.2
+- Fixed issue with [geckodriver path](https://github.com/samapriya/geeup/issues/22) and better path parsing
+- Added CI check for geckodriver
+
 ### v0.4.1
 - Fixed selenium parser issue [Issue 19](https://github.com/samapriya/geeup/issues/19)
 - Implemented Cloud API fix for table uploads
