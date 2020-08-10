@@ -35,5 +35,4 @@ jobs:
     - name: Test package
       run: |
         python setup.py install
-        geeup -h
         geeup init
