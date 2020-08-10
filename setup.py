@@ -38,7 +38,6 @@ setuptools.setup(
         "google-cloud-storage >= 1.1.1",
         "selenium>=3.13.0",
         'pipwin>= 0.4.5;platform_system=="Windows"',
-        'gdal>=3.0.4;platform_system!="Windows"',
         'pyproj>=1.9.5.1;platform_system!="Windows"',
         'shapely>=1.6.4;platform_system!="Windows"',
         'fiona>=1.8.6;platform_system!="Windows"',
