@@ -31,9 +31,11 @@ jobs:
         pip install flake8 pytest pipwin pandas wheel
         pip install poetry
         pip install --no-build-isolation pendulum==2.1.0
-        sudo apt-get install gdal-bin
-        sudo apt-get install python-gdal
         pipwin refresh
+    - name: Install gdal-bin
+      run: sudo apt-get install gdal-bin
+    - name: Install python-gdal
+      run: sudo apt-get install python-gdal
     - name: Test package
       run: |
         python setup.py install
