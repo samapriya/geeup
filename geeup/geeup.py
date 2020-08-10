@@ -59,6 +59,30 @@ if str(platform.system().lower()) == "windows":
         subprocess.call('pipwin install pandas', shell=True)
     except Exception as e:
         print(e)
+    try:
+        import pyproj
+    except ImportError:
+        subprocess.call('pipwin install pyproj', shell=True)
+    except Exception as e:
+        print(e)
+    try:
+        import shapely
+    except ImportError:
+        subprocess.call('pipwin install shapely', shell=True)
+    except Exception as e:
+        print(e)
+    try:
+        import fiona
+    except ImportError:
+        subprocess.call('pipwin install fiona', shell=True)
+    except Exception as e:
+        print(e)
+    try:
+        import geopandas
+    except ImportError:
+        subprocess.call('pipwin install geopandas', shell=True)
+    except Exception as e:
+        print(e)
 from .batch_uploader import upload
 from .sel_tuploader import seltabup
 from .zipfiles import zipshape
