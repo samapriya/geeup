@@ -145,14 +145,50 @@ def humansize(nbytes):
     f = ('%.2f' % nbytes).rstrip('0').rstrip('.')
     return '%s %s' % (f, suffixes[i])
 
-def quota():
-    quota=ee.data.getAssetRootQuota(ee.data.getAssetRoots()[0]['id'])
-    print('')
-    print("Total Quota: "+str(humansize(quota['asset_size']['limit'])))
-    print("Used Quota: "+str(humansize(quota['asset_size']['usage'])))
+def quota(project):
+    ee.Initialize()
+    if project is not None:
+        try:
+            if not project.endswith('/'):
+                project = project+'/'
+            else:
+                project = project
+            project_detail= ee.data.getAsset(project)
+            print("")
+            if 'sizeBytes' in project_detail['quota']:
+                print('Used {} of {}'.format(humansize(int(project_detail['quota']['sizeBytes'])),(humansize(int(project_detail['quota']['maxSizeBytes'])))))
+            else:
+                print('Used 0 of {}'.format(humansize(int(project_detail['quota']['maxSizeBytes']))))
+            if 'assetCount' in project_detail['quota']:
+                print('Used {:,} assets of {:,} total'.format(int(project_detail['quota']['assetCount']),int(project_detail['quota']['maxAssetCount'])))
+            else:
+                print('Used 0 assets of {:,} total'.format(int(project_detail['quota']['maxAssetCount'])))
+        except Exception as e:
+            print(e)
+    else:
+        for roots in ee.data.getAssetRoots():
+            quota = ee.data.getAssetRootQuota(roots["id"])
+            print("")
+            print(
+                "Root assets path: {}".format(
+                    roots["id"].replace("projects/earthengine-legacy/assets/", "")
+                )
+            )
+            print(
+                "Used {} of {}".format(
+                    humansize(quota["asset_size"]["usage"]),
+                    humansize(quota["asset_size"]["limit"]),
+                )
+            )
+            print(
+                "Used {:,} assets of {:,} total".format(
+                    quota["asset_count"]["usage"], quota["asset_count"]["limit"]
+                )
+            )
+
 
 def quota_from_parser(args):
-    quota()
+    quota(project=args.project)
 
 def zipshape_from_parser(args):
     zipshape(directory=args.input,export=args.output)
@@ -218,7 +254,15 @@ def main(args=None):
     parser_selsetup = subparsers.add_parser('selsetup', help='Non headless setup for new google account, use if upload throws errors')
     parser_selsetup.set_defaults(func=selsetup_from_parser)
 
-    parser_quota = subparsers.add_parser('quota', help='Print Earth Engine total quota and used quota')
+    parser_quota = subparsers.add_parser(
+        "quota", help="Print Earth Engine total quota and used quota"
+    )
+    optional_named = parser_quota.add_argument_group("Optional named arguments")
+    optional_named.add_argument(
+        "--project",
+        help="Project Name usually in format projects/project-name/assets/",
+        default=None,
+    )
     parser_quota.set_defaults(func=quota_from_parser)
 
     parser_zipshape = subparsers.add_parser('zipshape', help='Zips all shapefiles and subsidary files into individual zip files')

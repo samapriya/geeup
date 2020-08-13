@@ -133,13 +133,18 @@ The tool is designed to handle batch uploading of images and tables(shapefiles).
 ``` geeup init```
 
 ### gee Quota
-Just a simple tool to print your earth engine quota quickly.
+Just a simple tool to print your earth engine quota quickly. Since Google Earth Engine also allows you to use Cloud Projects instead of the standard legacy folders, this tool now has the option to pass the project path (usually **projects/project-name/assets/**)
 
 ```
-usage: geeup quota [-h]
+usage: geeup quota [-h] [--project PROJECT]
 
 optional arguments:
-  -h, --help  show this help message and exit
+  -h, --help         show this help message and exit
+
+Optional named arguments:
+  --project PROJECT  Project Name usually in format projects/project-
+                     name/assets/
+
 ```
 
 ### gee Zipshape
@@ -240,6 +245,9 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 # Changelog
+
+### v0.4.3
+- Updated quota tool to handle Google Cloud Projects in GEE
 
 ### v0.4.2
 - Fixed issue with [geckodriver path](https://github.com/samapriya/geeup/issues/22) and better path parsing
