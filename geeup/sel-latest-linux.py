@@ -12,7 +12,7 @@ def geckodown(directory):
     soup=BeautifulSoup(source.encode("utf-8"),'lxml')
     vr=str(soup.title.text.encode("utf-8")).split(' ')[1]
     for link in soup.findAll('a', attrs={'href': re.compile("/mozilla/geckodriver/releases/")}):
-        if vr+'-'+comb in link.get('href'):
+        if vr+'-'+comb in link.get('href') and link.get('href').endswith('.tar.gz'):
             container = 'https://github.com/{}'.format(link.get('href'))
             #container="https://github.com/mozilla/geckodriver/releases/download/"+vr+"/geckodriver-"+vr+'-'+comb
             print("Downloading from: "+str(container))
@@ -22,9 +22,8 @@ def geckodown(directory):
                 obj = SmartDL(url, dest)
                 obj.start()
                 path=obj.get_dest()
-                archive=zipfile.ZipFile(os.path.join(directory,'geckodriver-v'+vr+'-'+comb))
-                for files in archive.namelist():
-                    archive.extractall(directory)
+                archive=tarfile.open(os.path.join(directory,'geckodriver-v'+vr+'-'+comb))
+                archive.extractall(directory)
                 print("Use selenium driver path as "+str(directory))
             except Exception as e:
                 print('Issues updating with error '+str(e))
