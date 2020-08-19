@@ -71,12 +71,11 @@ def seltabup(dirc, uname, destination):
         passw = getpass.getpass()
         if os.name == "nt":
             driver = Firefox(
-                executable_path=os.path.join(lp, "geckodriver.exe"),
-                firefox_options=options,
+                executable_path=os.path.join(lp, "geckodriver.exe"), options=options
             )
         else:
             driver = Firefox(
-                executable_path=os.path.join(lp, "geckodriver"), firefox_options=options
+                executable_path=os.path.join(lp, "geckodriver"), options=options
             )
         try:
             # Using stackoverflow for third-party login & redirect

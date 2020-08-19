@@ -246,6 +246,9 @@ optional arguments:
 ```
 # Changelog
 
+### v0.4.4
+- Replaced firefox_options with options for selenium 3.14 and higher related to [issue 24](https://github.com/samapriya/geeup/issues/24)
+
 ### v0.4.3
 - Updated quota tool to handle Google Cloud Projects in GEE
 

@@ -82,6 +82,7 @@ def upload(
     nodata_value=None,
     bucket_name=None,
 ):
+
     ee.Initialize()
 
     __verify_path_for_upload(destination_path)
@@ -209,6 +210,7 @@ def upload(
             print(e)
             print("Upload of " + str(filename) + " has failed.")
 
+
 def __verify_path_for_upload(path):
     folder = path[: path.rfind("/")]
     response = ee.data.getInfo(folder)
@@ -307,11 +309,11 @@ def __get_google_auth_session(username, password):
     passw = str(password)
     if os.name == "nt":
         driver = Firefox(
-            executable_path=os.path.join(lp, "geckodriver.exe"), firefox_options=options
+            executable_path=os.path.join(lp, "geckodriver.exe"), options=options
         )
     else:
         driver = Firefox(
-            executable_path=os.path.join(lp, "geckodriver"), firefox_options=options
+            executable_path=os.path.join(lp, "geckodriver"), options=options
         )
     try:
         # Using stackoverflow for third-party login & redirect
