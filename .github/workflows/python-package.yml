@@ -36,3 +36,4 @@ jobs:
       run: |
         python setup.py install
         geeup init
+        geeup -h
