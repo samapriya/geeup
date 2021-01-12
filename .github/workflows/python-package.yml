@@ -31,10 +31,8 @@ jobs:
         pip install trio
         pip install -U pip setuptools
         pip install google-api-core
-        pip install flake8 pytest pipwin pandas wheel
+        pip install flake8 pytest pandas wheel
         pip install poetry
-        pipwin refresh
-        pipwin install gdal
     - name: Test package
       run: |
         python setup.py install
