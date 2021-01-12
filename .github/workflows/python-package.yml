@@ -34,6 +34,7 @@ jobs:
         pip install flake8 pytest pipwin pandas wheel
         pip install poetry
         pipwin refresh
+        pipwin install gdal
     - name: Test package
       run: |
         python setup.py install
