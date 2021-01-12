@@ -22,11 +22,11 @@ def readme():
 
 setuptools.setup(
     name="geeup",
-    version="0.4.4",
+    version="0.4.5",
     packages=find_packages(),
     url="https://github.com/samapriya/geeup",
     install_requires=[
-        "earthengine_api >= 0.1.222",
+        "earthengine_api >= 0.1.238",
         "logzero>=1.5.0",
         "requests >= 2.10.0",
         "retrying >= 1.3.3",
@@ -37,7 +37,7 @@ setuptools.setup(
         "pytest >= 3.0.0",
         "google-cloud-storage >= 1.1.1",
         "selenium>=3.13.0",
-        'pipwin>= 0.4.5;platform_system=="Windows"',
+        'pipwin>= 0.5.0;platform_system=="Windows"',
         'pyproj>=1.9.5.1;platform_system!="Windows"',
         'shapely>=1.6.4;platform_system!="Windows"',
         'fiona>=1.8.6;platform_system!="Windows"',
@@ -61,6 +61,7 @@ setuptools.setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: GIS",
     ),

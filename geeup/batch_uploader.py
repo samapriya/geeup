@@ -60,7 +60,6 @@ import ee
 import pandas as pd
 import subprocess
 import retrying
-from selenium import webdriver
 from selenium.webdriver import Firefox
 from selenium.webdriver.firefox.options import Options
 from requests_toolbelt import MultipartEncoder

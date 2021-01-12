@@ -220,15 +220,16 @@ def seltabup_from_parser(args):
            dirc=args.source,
            destination=args.dest)
 def tasks():
-    statuses=ee.data.getTaskList()
-    st=[]
+    ee.Initialize()
+    statuses = ee.data.listOperations()
+    st = []
     for status in statuses:
-        st.append(status['state'])
-    print("Tasks Running: "+str(st.count('RUNNING')))
-    print("Tasks Ready: "+str(st.count('READY')))
-    print("Tasks Completed: "+str(st.count('COMPLETED')))
-    print("Tasks Failed: "+str(st.count('FAILED')))
-    print("Tasks Cancelled: "+str(st.count('CANCELLED')))
+        st.append(status["metadata"]["state"])
+    print("Tasks Running: " + str(st.count("RUNNING")))
+    print("Tasks Pending: " + str(st.count("PENDING")))
+    print("Tasks Completed: " + str(st.count("SUCCEEDED")))
+    print("Tasks Failed: " + str(st.count("FAILED")))
+    print("Tasks Cancelled: " + str(st.count("CANCELLED")+st.count("CANCELLING")))
 
 def tasks_from_parser(args):
     tasks()

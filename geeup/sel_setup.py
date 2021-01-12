@@ -23,9 +23,9 @@ def authenticate():
     passw=str(getpass.getpass("Enter your Password:  "))
     options=Options()
     if os.name=="nt":
-        driver = Firefox(executable_path=os.path.join(pathway,"geckodriver.exe"),firefox_options=options)
+        driver = Firefox(executable_path=os.path.join(pathway,"geckodriver.exe"),options=options)
     else:
-        driver = Firefox(executable_path=os.path.join(pathway,"geckodriver"),firefox_options=options)
+        driver = Firefox(executable_path=os.path.join(pathway,"geckodriver"),options=options)
     try:
         # Using stackoverflow for third-party login & redirect
         driver.get('https://stackoverflow.com/users/signup?ssrc=head&returnurl=%2fusers%2fstory%2fcurrent%27')

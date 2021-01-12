@@ -21,14 +21,14 @@ Zenodo. http://doi.org/10.5281/zenodo.3991316
 * [Getting started](#getting-started)
 * [geeup Simple CLI for Earth Engine Uploads](#geeup-simple-cli-for-earth-engine-uploads)
     * [geeup init](#geeup-init)
-    * [gee Quota](#gee-quota)
-    * [gee getmeta](#gee-getmeta)
-    * [gee Zipshape](#gee-zipshape)
-    * [gee upload](#gee-upload)
-    * [gee seltabup](#gee-seltabup)
-    * [gee selsetup](#gee-selsetup)
-    * [gee tasks](#gee-tasks)
-    * [gee delete](#gee-delete)
+    * [geeup selsetup](#geeup-selsetup)
+    * [geeup Quota](#geeup-quota)
+    * [geeup Zipshape](#geeup-zipshape)
+    * [geeup getmeta](#geeup-getmeta)
+    * [geeup upload](#geeup-upload)
+    * [geeup seltabup](#geeup-seltabup)
+    * [geeup tasks](#geeup-tasks)
+    * [geeup delete](#geeup-delete)
 
 ## Installation
 This assumes that you have native python & pip installed in your system, you can test this by going to the terminal (or windows command prompt) and trying
@@ -96,22 +96,23 @@ As usual, to print help:
 
 ```
 usage: geeup.py [-h]
-                {update,quota,zipshape,upload,selupload,seltabup,tasks,delete}
+                {init,selsetup,quota,zipshape,getmeta,upload,seltabup,tasks,delete}
                 ...
 
 Simple Client for Earth Engine Uploads with Selenium Support
 
 positional arguments:
-  {update,quota,zipshape,upload,selupload,seltabup,tasks,delete}
-    update              Updates Selenium drivers for firefox
+  {init,selsetup,quota,zipshape,getmeta,upload,seltabup,tasks,delete}
+    init                Initializes the tool by downloading and updating
+                        selenium drivers for firefox
+    selsetup            Non headless setup for new google account, use if
+                        upload throws errors
     quota               Print Earth Engine total quota and used quota
     zipshape            Zips all shapefiles and subsidary files into
                         individual zip files
-    getmeta             Generates generalized metadata for all rasters in folder
+    getmeta             Creates a generalized metadata for rasters in folder
     upload              Batch Asset Uploader using Selenium
     seltabup            Batch Table Uploader using Selenium.
-    selsetup            Non headless setup for new google account, use if upload
-                        throws errors
     tasks               Queries current task status
                         [completed,running,ready,failed,cancelled]
     delete              Deletes collection and all items inside. Supports
@@ -132,7 +133,12 @@ The tool is designed to handle batch uploading of images and tables(shapefiles).
 
 ``` geeup init```
 
-### gee Quota
+### geeup selsetup
+Once in a while the geckodriver requires manual input before signing into the google earth engine, this tool will allow you to interact with the initialization of Google Earth Engine code editor window. It allows the user to specify the account they want to use, and should only be needed once.
+
+```geeup selsetup```
+
+### geeup Quota
 Just a simple tool to print your earth engine quota quickly. Since Google Earth Engine also allows you to use Cloud Projects instead of the standard legacy folders, this tool now has the option to pass the project path (usually **projects/project-name/assets/**)
 
 ```
@@ -147,7 +153,7 @@ Optional named arguments:
 
 ```
 
-### gee Zipshape
+### geeup Zipshape
 So here's how table upload in Google Earth Engine works, you can either upload the component files shp, shx, prj and dbf or you can zip these files together and upload it as a single file. The pros for this is that it reduces the overall size of the shapefile after zipping them along, this tool looks for the shp file and finds the subsidiary files and zips them ready for upload. It also helps when you have limited upload bandwidth. Cons you have to create a replicate structure of the file system, but it saves on bandwidth and auto-arranges your files so you don't have to look for each additional file.
 
 ```
@@ -162,7 +168,7 @@ Required named arguments.:
                    files if present in input will be zipped and stored
 ```
 
-### gee getmeta
+### geeup getmeta
 This script generates a generalized metadata using information parsed from gdalinfo and metadata properties. For now it generates metadata with image name, x and y dimension of images, the pixel resolution and the number of bands.
 
 ```
@@ -177,7 +183,7 @@ Required named arguments.:
 
 ```
 
-### gee upload
+### geeup upload
 The script creates an Image Collection from GeoTIFFs in your local directory. By default, the image name in the collection is the same as the local directory name; with the optional parameter you can provide a different name.
 
 ```
@@ -200,7 +206,7 @@ Optional named arguments:
                         data)
 ```
 
-### gee seltabup
+### geeup seltabup
 This tool allows you to batch download tables/shapefiles to a folder. It uses a modified version of the image upload and a wrapper around the earthengine upload cli to achieve this while creating folders if they don't exist and reporting on assets and checking on uploads. This only requires a source, destination and your ee authenticated email address. This tool also uses selenium to upload the tables.
 
 ```
@@ -216,12 +222,7 @@ Required named arguments.:
   -u USER, --user USER  Google account name (gmail address).
 ```
 
-### gee selsetup
-Once in a while the geckodriver requires manual input before signing into the google earth engine, this tool will allow you to interact with the initialization of Google Earth Engine code editor window. It allows the user to specify the account they want to use, and should only be needed once.
-
-```geeup selsetup```
-
-### gee tasks
+### geeup tasks
 This script counts all currently running, ready, completed, failed and canceled tasks along with failed tasks. This tool is linked to your google earth engine account with which you initialized the earth engine client. This takes no argument.
 
 ```
@@ -231,7 +232,7 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 
-### gee delete
+### geeup delete
 The delete is recursive, meaning it will also delete all children assets: images, collections, and folders. Use with caution!
 
 ```
