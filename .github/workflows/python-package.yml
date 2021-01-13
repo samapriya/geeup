@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [macos-latest, ubuntu-latest]
         python-version: [3.6, 3.7, 3.8]
       fail-fast: false
     steps:
@@ -33,11 +33,6 @@ jobs:
         pip install trio
     - name: Test package
       run: |
-        pipwin refresh
-        pipwin install gdal
-        pipwin install pyproj
-        pipwin install shapely
-        pipwin install fiona
         python setup.py install
         geeup -h
         geeup init
