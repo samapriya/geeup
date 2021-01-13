@@ -1,6 +1,6 @@
 # geeup: Simple CLI for Earth Engine Uploads with Selenium Support &nbsp; [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Use%20geeup%20CLI%20with%20@GEE%20for%20uploads&url=https://github.com/samapriya/geeup)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3991316.svg)](https://doi.org/10.5281/zenodo.3991316)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4435295.svg)](https://doi.org/10.5281/zenodo.4435295)
 [![PyPI version](https://badge.fury.io/py/geeup.svg)](https://badge.fury.io/py/geeup)
 [![Downloads](https://pepy.tech/badge/geeup/month)](https://pepy.tech/project/geeup/month)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -11,8 +11,8 @@ This tool came of the simple need to handle batch uploads of both image assets t
 -If you find this tool useful, star and cite it as below
 
 ```
-Samapriya Roy. (2021, January 12). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (Version 0.4.5).
-Zenodo. http://doi.org/10.5281/zenodo.3991316
+Samapriya Roy. (2021, January 13). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (Version 0.4.5).
+Zenodo. http://doi.org/10.5281/zenodo.4435295
 ```
 
 ## Table of contents
