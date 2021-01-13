@@ -247,6 +247,11 @@ optional arguments:
 ```
 # Changelog
 
+### v0.4.5
+- Replaced firefox_options with options for selenium 3.14 and higher related to [issue 24](https://github.com/samapriya/geeup/issues/24) for selsetup
+- updated earthengine-api requirement to 0.1.238
+- update tasks fetch from earthengine api
+
 ### v0.4.4
 - Replaced firefox_options with options for selenium 3.14 and higher related to [issue 24](https://github.com/samapriya/geeup/issues/24)
 
