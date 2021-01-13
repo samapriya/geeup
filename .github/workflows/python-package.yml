@@ -31,9 +31,13 @@ jobs:
         pip install flake8 pytest pipwin pandas wheel
         pip install poetry
         pip install trio
-        pip uninstall gdal
     - name: Test package
       run: |
+        pipwin refresh
+        pipwin install gdal
+        pipwin install pyproj
+        pipwin install shapely
+        pipwin install fiona
         python setup.py install
         geeup -h
         geeup init
