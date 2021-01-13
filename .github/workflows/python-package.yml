@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-        python-version: [3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8]
       fail-fast: false
     steps:
     - uses: actions/checkout@v2
@@ -31,6 +31,7 @@ jobs:
         pip install flake8 pytest pipwin pandas wheel
         pip install poetry
         pip install trio
+        pip uninstall gdal
     - name: Test package
       run: |
         python setup.py install
