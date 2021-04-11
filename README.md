@@ -3,7 +3,7 @@
 
 ![](https://tokei.rs/b1/github/samapriya/geeup?category=code)
 ![](https://tokei.rs/b1/github/samapriya/geeup?category=files)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4435295.svg)](https://doi.org/10.5281/zenodo.4435295)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4679830.svg)](https://doi.org/10.5281/zenodo.4679830)
 [![PyPI version](https://badge.fury.io/py/geeup.svg)](https://badge.fury.io/py/geeup)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/geeup)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
