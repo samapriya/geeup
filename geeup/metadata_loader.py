@@ -5,7 +5,7 @@ import collections
 import ast
 
 
-ValidationResult = collections.namedtuple('ValidationResult', ['success', 'keys'])
+ValidationResult = collections.namedtuple("ValidationResult", ["success", "keys"])
 
 
 class IllegalPropertyName(Exception):
@@ -20,21 +20,23 @@ def validate_metadata_from_csv(path):
     """
     all_keys = []
 
-    with open(path, mode='r') as metadata_file:
-        logging.info('Running metatdata validator for %s', path)
+    with open(path, mode="r") as metadata_file:
+        logging.info("Running metatdata validator for %s", path)
         success = True
         reader = csv.reader(metadata_file)
         header = next(reader)
 
         if not properties_allowed(properties=header, validator=allowed_property_key):
-            raise IllegalPropertyName('The header has illegal name.')
+            raise IllegalPropertyName("The header has illegal name.")
 
         for row in reader:
             all_keys.append(row[0])
             if not properties_allowed(properties=row, validator=allowed_property_value):
                 success = False
 
-        logging.info('Validation successful') if success else logging.error('Validation failed')
+        logging.info("Validation successful") if success else logging.error(
+            "Validation failed"
+        )
 
         return ValidationResult(success=success, keys=all_keys)
 
@@ -59,7 +61,7 @@ def load_metadata_from_csv(path):
     :param path to csv:
     :return: dictionary of dictionaries
     """
-    with open(path, mode='r') as metadata_file:
+    with open(path, mode="r") as metadata_file:
         reader = csv.reader(metadata_file)
         header = next(reader)
 
@@ -89,28 +91,32 @@ def allowed_property_value(prop):
     if prop:
         return True
     else:
-        logging.warning('Illegal property: empty string or None')
+        logging.warning("Illegal property: empty string or None")
         return False
 
 
 def allowed_property_key(prop):
-    google_special_properties = ('system:description',
-                                 'system:provider_url',
-                                 'system:tags',
-                                 'system:time_end',
-                                 'system:time_start',
-                                 'system:title')
+    google_special_properties = (
+        "system:description",
+        "system:provider_url",
+        "system:tags",
+        "system:time_end",
+        "system:time_start",
+        "system:title",
+    )
 
     if prop in google_special_properties or re.match("^[A-Za-z0-9_]+$", prop):
         return True
     else:
-        logging.warning('Property name %s is invalid. Special properties [system:description, system:provider_url, '
-                        'system:tags, system:time_end, system:time_start, system:title] are allowed; other property '
-                        'keys must contain only letters, digits and underscores.')
+        logging.warning(
+            "Property name %s is invalid. Special properties [system:description, system:provider_url, "
+            "system:tags, system:time_end, system:time_start, system:title] are allowed; other property "
+            "keys must contain only letters, digits and underscores."
+        )
         return False
 
 
 def is_legal_gee_metadata(row):
     key = row[0]
     values = row[1:]
-    re.match("^[A-Za-z0-9_]+$", ' asss_sasa')
+    re.match("^[A-Za-z0-9_]+$", " asss_sasa")

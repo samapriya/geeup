@@ -52,10 +52,10 @@ import glob
 import logging
 import os
 import sys
+import platform
 import time
 import json
 import requests
-import ast
 import ee
 import pandas as pd
 import subprocess
@@ -76,6 +76,7 @@ slist = []
 def upload(
     user,
     source_path,
+    method,
     destination_path,
     metadata_path=None,
     nodata_value=None,
@@ -94,9 +95,12 @@ def upload(
 
     metadata = load_metadata_from_csv(metadata_path) if metadata_path else None
 
-    if user is not None:
+    if user and method is not None:
+        password = None
+        google_session = __get_google_auth_session(user, password, method)
+    elif user is not None and method is None:
         password = getpass.getpass()
-        google_session = __get_google_auth_session(user, password)
+        google_session = __get_google_auth_session(user, password, method)
     else:
         storage_client = storage.Client()
 
@@ -300,46 +304,114 @@ def __extract_metadata_for_image(filename, metadata):
         return None
 
 
-def __get_google_auth_session(username, password):
-    ee.Initialize()
-    options = Options()
-    options.add_argument("-headless")
-    uname = str(username)
-    passw = str(password)
-    if os.name == "nt":
-        driver = Firefox(
-            executable_path=os.path.join(lp, "geckodriver.exe"), options=options
-        )
+def cookie_check(cookie_list):
+    false = False
+    true = True
+    cook_list = []
+    for items in cookie_list:
+        cook_list.append("{}={}".format(items["name"], items["value"]))
+    cookie = "; ".join(cook_list)
+    headers = {"cookie": cookie}
+    response = requests.get(
+        "https://code.earthengine.google.com/assets/upload/geturl", headers=headers
+    )
+    if (
+        response.status_code == 200
+        and response.headers.get("content-type").split(";")[0] == "application/json"
+    ):
+        return True
     else:
-        driver = Firefox(
-            executable_path=os.path.join(lp, "geckodriver"), options=options
+        return False
+
+
+def __get_google_auth_session(username, password, method):
+    ee.Initialize()
+    if method is not None and method == "cookies":
+        if not os.path.exists("cookie_jar.json"):
+            try:
+                cookie_list = raw_input("Enter your Cookie List:  ")
+            except Exception as e:
+                cookie_list = input("Enter your Cookie List:  ")
+            with open("cookie_jar.json", "w") as outfile:
+                json.dump(json.loads(cookie_list), outfile)
+            cookie_list = json.loads(cookie_list)
+        elif os.path.exists("cookie_jar.json"):
+            with open("cookie_jar.json") as json_file:
+                cookie_list = json.load(json_file)
+            if cookie_check(cookie_list) is True:
+                print("Using saved Cookies")
+                cookie_list = cookie_list
+            elif cookie_check(cookie_list) is False:
+                try:
+                    cookie_list = raw_input(
+                        "Cookies Expired | Enter your Cookie List:  "
+                    )
+                except Exception as e:
+                    cookie_list = input("Cookies Expired | Enter your Cookie List:  ")
+                with open("cookie_jar.json", "w") as outfile:
+                    json.dump(json.loads(cookie_list), outfile)
+                    cookie_list = json.loads(cookie_list)
+        time.sleep(5)
+        if str(platform.system().lower()) == "windows":
+            os.system("cls")
+        elif str(platform.system().lower()) == "linux":
+            os.system("clear")
+        elif str(platform.system().lower()) == "darwin":
+            os.system("clear")
+        else:
+            pass
+        session = requests.Session()
+        for cookies in cookie_list:
+            session.cookies.set(cookies["name"], cookies["value"])
+        response = session.get(
+            "https://code.earthengine.google.com/assets/upload/geturl"
         )
-    try:
-        # Using stackoverflow for third-party login & redirect
-        driver.get(
-            "https://stackoverflow.com/users/signup?ssrc=head&returnurl=%2fusers%2fstory%2fcurrent%27"
-        )
-        time.sleep(5)
-        driver.find_element_by_xpath('//*[@id="openid-buttons"]/button[1]').click()
-        time.sleep(5)
-        driver.find_element_by_xpath('//input[@type="email"]').send_keys(uname)
-        driver.find_element_by_xpath("//div[@id='identifierNext']").click()
-        time.sleep(5)
-        driver.find_element_by_xpath('//input[@type="password"]').send_keys(passw)
-        driver.find_element_by_xpath('//*[@id="passwordNext"]').click()
-        time.sleep(5)
-        driver.get("https://code.earthengine.google.com")
-        time.sleep(8)
-    except Exception as e:
-        print(e)
+        if (
+            response.status_code == 200
+            and ast.literal_eval(response.text)["url"] is not None
+        ):
+            return session
+        else:
+            print(response.status_code, response.text)
+    else:
+        options = Options()
+        options.add_argument("-headless")
+        uname = str(username)
+        passw = str(password)
+        if os.name == "nt":
+            driver = Firefox(
+                executable_path=os.path.join(lp, "geckodriver.exe"), options=options
+            )
+        else:
+            driver = Firefox(
+                executable_path=os.path.join(lp, "geckodriver"), options=options
+            )
+        try:
+            # Using stackoverflow for third-party login & redirect
+            driver.get(
+                "https://stackoverflow.com/users/signup?ssrc=head&returnurl=%2fusers%2fstory%2fcurrent%27"
+            )
+            time.sleep(5)
+            driver.find_element_by_xpath('//*[@id="openid-buttons"]/button[1]').click()
+            time.sleep(5)
+            driver.find_element_by_xpath('//input[@type="email"]').send_keys(uname)
+            driver.find_element_by_xpath("//div[@id='identifierNext']").click()
+            time.sleep(5)
+            driver.find_element_by_xpath('//input[@type="password"]').send_keys(passw)
+            driver.find_element_by_xpath('//*[@id="passwordNext"]').click()
+            time.sleep(5)
+            driver.get("https://code.earthengine.google.com")
+            time.sleep(8)
+        except Exception as e:
+            print(e)
+            driver.close()
+            sys.exit("Failed to setup & use selenium")
+        cookies = driver.get_cookies()
+        session = requests.Session()
+        for cookie in cookies:
+            session.cookies.set(cookie["name"], cookie["value"])
         driver.close()
-        sys.exit("Failed to setup & use selenium")
-    cookies = driver.get_cookies()
-    session = requests.Session()
-    for cookie in cookies:
-        session.cookies.set(cookie["name"], cookie["value"])
-    driver.close()
-    return session
+        return session
 
 
 def __get_upload_url(session):

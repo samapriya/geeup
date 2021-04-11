@@ -14,21 +14,29 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
-pathway=os.path.dirname(os.path.realpath(__file__))
+pathway = os.path.dirname(os.path.realpath(__file__))
+
+
 def authenticate():
     try:
-        uname=str(raw_input("Enter your Username:  "))
+        uname = str(raw_input("Enter your Username:  "))
     except Exception as e:
-        uname=str(input("Enter your Username:  "))
-    passw=str(getpass.getpass("Enter your Password:  "))
-    options=Options()
-    if os.name=="nt":
-        driver = Firefox(executable_path=os.path.join(pathway,"geckodriver.exe"),options=options)
+        uname = str(input("Enter your Username:  "))
+    passw = str(getpass.getpass("Enter your Password:  "))
+    options = Options()
+    if os.name == "nt":
+        driver = Firefox(
+            executable_path=os.path.join(pathway, "geckodriver.exe"), options=options
+        )
     else:
-        driver = Firefox(executable_path=os.path.join(pathway,"geckodriver"),options=options)
+        driver = Firefox(
+            executable_path=os.path.join(pathway, "geckodriver"), options=options
+        )
     try:
         # Using stackoverflow for third-party login & redirect
-        driver.get('https://stackoverflow.com/users/signup?ssrc=head&returnurl=%2fusers%2fstory%2fcurrent%27')
+        driver.get(
+            "https://stackoverflow.com/users/signup?ssrc=head&returnurl=%2fusers%2fstory%2fcurrent%27"
+        )
         time.sleep(5)
         driver.find_element_by_xpath('//*[@id="openid-buttons"]/button[1]').click()
         time.sleep(5)
@@ -38,25 +46,27 @@ def authenticate():
         driver.find_element_by_xpath('//input[@type="password"]').send_keys(passw)
         driver.find_element_by_xpath('//*[@id="passwordNext"]').click()
         time.sleep(5)
-        driver.get('https://code.earthengine.google.com')
+        driver.get("https://code.earthengine.google.com")
         time.sleep(8)
     except Exception as e:
         print(e)
         driver.close()
-        sys.exit('Failed to setup Selenium profile')
+        sys.exit("Failed to setup Selenium profile")
     cookies = driver.get_cookies()
     s = requests.Session()
     for cookie in cookies:
-        s.cookies.set(cookie['name'], cookie['value'])
-    r=s.get("https://code.earthengine.google.com/assets/upload/geturl")
-    if r.status_code ==200:
+        s.cookies.set(cookie["name"], cookie["value"])
+    r = s.get("https://code.earthengine.google.com/assets/upload/geturl")
+    if r.status_code == 200:
         try:
             d = ast.literal_eval(r.text)
-            if d['url']:
-                print('\n'+'Selenium Setup complete with Google Profile')
+            if d["url"]:
+                print("\n" + "Selenium Setup complete with Google Profile")
         except Exception as e:
             print(e)
     else:
-        print('Authentication failed for GEE account')
+        print("Authentication failed for GEE account")
     driver.close()
+
+
 authenticate()
