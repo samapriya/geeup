@@ -18,6 +18,6 @@ This tool came of the simple need to handle batch uploads of both image assets t
 If you use this tool to download data for your research, and find this tool useful, star and cite it as below
 
 ```
-Samapriya Roy. (2021, January 13). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (Version 0.4.5).
-Zenodo. http://doi.org/10.5281/zenodo.4435295
+Samapriya Roy. (2021, April 11). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (Version 0.4.6).
+Zenodo. http://doi.org/10.5281/zenodo.4679830
 ```
