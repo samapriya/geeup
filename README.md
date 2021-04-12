@@ -205,6 +205,12 @@ To run cookie_setup and to parse and save cookie user
 geeup cookies_setup
 ```
 
+* For **Bash** the cannonical mode will allow you to only paste upto 4095 characters and as such geeup cookie_setup might seem to fail for this use the following steps
+
+* Disable cannonical mode by typing ```stty -icanon``` in terminal
+* Then run ```geeup cookie_setup```
+* Once done reenable cannonical mode by typing ```stty icanon``` in terminal
+
 *Since cookies generated here are post login, theoretically it should work on accounts even with two factor auth or university based Single Sign on GEE accounts but might need further testing*
 
 ### geeup upload
