@@ -168,10 +168,15 @@ def init_from_parser(args):
 
 # cookie setup
 def cookie_setup():
+    platform_info = platform.system().lower()
+    if str(platform.system().lower()) == "linux":
+        subprocess.check_call(["stty", "-icanon"])
     try:
         cookie_list = raw_input("Enter your Cookie List:  ")
     except Exception as e:
         cookie_list = input("Enter your Cookie List:  ")
+    if str(platform.system().lower()) == "linux":
+        subprocess.check_call(["stty", "icanon"])
     with open("cookie_jar.json", "w") as outfile:
         json.dump(json.loads(cookie_list), outfile)
     time.sleep(3)
@@ -305,6 +310,7 @@ def upload_from_parser(args):
         metadata_path=args.metadata,
         nodata_value=args.nodata,
         method=args.method,
+        pyramiding=args.pyramids,
     )
 
 
@@ -519,6 +525,10 @@ def main(args=None):
         "--nodata",
         type=int,
         help="The value to burn into the raster as NoData (missing data)",
+    )
+    optional_named.add_argument(
+        "--pyramids",
+        help="Pyramiding Policy, MEAN, MODE, MIN, MAX, SAMPLE",
     )
     required_named.add_argument(
         "-u", "--user", help="Google account name (gmail address)."

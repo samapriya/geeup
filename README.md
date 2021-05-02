@@ -280,6 +280,12 @@ optional arguments:
 ```
 # Changelog
 
+### v0.4.7
+- Both table and image upload support using cookies and better error handling.
+- Improved zipshape tool to avoid error handling
+- Image upload to collection now support pyramiding policy
+- Cookie setup tool now auto enables long string for Linux
+
 ### v0.4.6
 - Now pass cookies for authentication and image and table uploaders.
 - Added readme docs and feature to the tool

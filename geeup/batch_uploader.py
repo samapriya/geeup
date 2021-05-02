@@ -77,6 +77,7 @@ def upload(
     user,
     source_path,
     method,
+    pyramiding,
     destination_path,
     metadata_path=None,
     nodata_value=None,
@@ -101,8 +102,6 @@ def upload(
     elif user is not None and method is None:
         password = getpass.getpass()
         google_session = __get_google_auth_session(user, password, method)
-    else:
-        storage_client = storage.Client()
 
     __create_image_collection(destination_path)
 
@@ -141,8 +140,6 @@ def upload(
         try:
             if user is not None:
                 gsid = __upload_file_gee(session=google_session, file_path=image_path)
-            else:
-                gsid = __upload_file_gcs(storage_client, bucket_name, image_path)
 
             df = pd.read_csv(metadata_path)
             dd = (df.applymap(type) == str).all(0)
@@ -179,9 +176,14 @@ def upload(
                             j.pop("system:time_end")
                         elif "system:time_end" not in j:
                             end = None
+                        if pyramiding is not None:
+                            pyramidingPolicy = pyramiding.upper()
+                        else:
+                            pyramidingPolicy = "MEAN"
                         json_data = json.dumps(j)
                         main_payload = {
                             "name": asset_full_path,
+                            "pyramidingPolicy": pyramidingPolicy,
                             "tilesets": [{"sources": [{"uris": gsid}]}],
                             "start_time": {"seconds": ""},
                             "end_time": {"seconds": ""},
