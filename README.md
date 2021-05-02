@@ -18,6 +18,8 @@ Samapriya Roy. (2021, May 2). samapriya/geeup: geeup: Simple CLI for Earth Engin
 Zenodo. http://doi.org/10.5281/zenodo.4732735
 ```
 
+## ReadMe Page: [https://samapriya.github.io/geeup/](https://samapriya.github.io/geeup/)
+
 ## Table of contents
 * [Installation](#installation)
 * [Windows Setup](#windows-setup)
