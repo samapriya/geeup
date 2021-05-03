@@ -17,7 +17,7 @@ It does exactly one thing, copies cookies over and in this case we are copying o
 To run cookie_setup and to parse and save cookie user
 
 ```
-geeup cookies_setup
+geeup cookie_setup
 ```
 
 * For **Bash** the cannonical mode will allow you to only paste upto 4095 characters and as such geeup cookie_setup might seem to fail for this use the following steps
