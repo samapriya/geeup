@@ -165,14 +165,20 @@ def upload(
                         # j['id']=destination_path+'/'+line["id_no"]
                         # j['tilesets'][0]['sources'][0]['primaryPath']=gsid
                         if "system:time_start" in j:
-                            start = j["system:time_start"]
-                            start = int(str(start)[:10])
+                            start = str(j["system:time_start"])
+                            if len(start)==12:
+                                start=int(round(int(start)*0.001))
+                            else:
+                                start = int(str(start)[:10])
                             j.pop("system:time_start")
                         elif "system:time_start" not in j:
                             start = None
                         if "system:time_end" in j:
-                            end = j["system:time_end"]
-                            end = int(str(end)[:10])
+                            end = str(j["system:time_end"])
+                            if len(end)==12:
+                                end=int(round(int(end)*0.001))
+                            else:
+                                end = int(str(end)[:10])
                             j.pop("system:time_end")
                         elif "system:time_end" not in j:
                             end = None

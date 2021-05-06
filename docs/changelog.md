@@ -1,5 +1,8 @@
 # Changelog
 
+### v0.4.8
+- Fixed issue with epoch time conversion for 1970s and issue with second vs millisecond parsing
+
 ### v0.4.7
 - Both table and image upload support using cookies and better error handling.
 - Improved zipshape tool to avoid error handling
