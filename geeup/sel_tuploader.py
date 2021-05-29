@@ -38,8 +38,6 @@ table_exists = []
 gee_table_exists = []
 
 def cookie_check(cookie_list):
-    false = False
-    true = True
     cook_list = []
     for items in cookie_list:
         cook_list.append("{}={}".format(items["name"], items["value"]))
@@ -58,6 +56,9 @@ def cookie_check(cookie_list):
 
 def get_auth_session(method,uname):
     if method is not None and method == "cookies":
+        platform_info = platform.system().lower()
+        if str(platform.system().lower()) == "linux":
+            subprocess.check_call(["stty", "-icanon"])
         if not os.path.exists("cookie_jar.json"):
             try:
                 cookie_list = raw_input("Enter your Cookie List:  ")
@@ -173,7 +174,7 @@ def seltabup(dirc, uname, destination, method):
             ee.data.createAsset(
                 {"type": ee.data.ASSET_TYPE_FOLDER_CLOUD}, full_path_to_collection
             )
-        except:
+        except Exception:
             ee.data.createAsset(
                 {"type": ee.data.ASSET_TYPE_FOLDER}, full_path_to_collection
             )
@@ -193,14 +194,12 @@ def seltabup(dirc, uname, destination, method):
                 for item in list(diff_set):
                     full_path_to_table = os.path.join(root, item + ".zip")
                     file_name = item + ".zip"
-                    asset_full_path = full_path_to_collection + "/" + item.split(".")[0]
                     r = session.get(
                         "https://code.earthengine.google.com/assets/upload/geturl"
                     )
                     d = ast.literal_eval(r.text)
                     upload_url = d["url"]
                     with open(full_path_to_table, "rb") as f:
-                        upload_url = d["url"]
                         try:
                             m = MultipartEncoder(fields={"zip_file": (file_name, f)})
                             resp = session.post(

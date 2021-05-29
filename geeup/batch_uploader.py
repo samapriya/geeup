@@ -313,8 +313,6 @@ def __extract_metadata_for_image(filename, metadata):
 
 
 def cookie_check(cookie_list):
-    false = False
-    true = True
     cook_list = []
     for items in cookie_list:
         cook_list.append("{}={}".format(items["name"], items["value"]))
@@ -335,6 +333,9 @@ def cookie_check(cookie_list):
 def __get_google_auth_session(username, password, method):
     ee.Initialize()
     if method is not None and method == "cookies":
+        platform_info = platform.system().lower()
+        if str(platform.system().lower()) == "linux":
+            subprocess.check_call(["stty", "-icanon"])
         if not os.path.exists("cookie_jar.json"):
             try:
                 cookie_list = raw_input("Enter your Cookie List:  ")

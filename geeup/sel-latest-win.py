@@ -29,8 +29,7 @@ def geckodown(directory):
                 archive = zipfile.ZipFile(
                     os.path.join(directory, "geckodriver-v" + vr + "-" + comb)
                 )
-                for files in archive.namelist():
-                    archive.extractall(directory)
+                archive.extractall(directory)
                 print("Use selenium driver path as " + str(directory))
             except Exception as e:
                 print("Issues updating with error " + str(e))

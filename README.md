@@ -282,6 +282,11 @@ optional arguments:
 ```
 # Changelog
 
+### v0.4.9
+- Improvements to redundancy in code
+- Improvements to version check for tool
+- General cleanup
+
 ### v0.4.8
 - Fixed issue with epoch time conversion for 1970s and issue with second vs millisecond parsing
 
