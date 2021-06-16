@@ -14,7 +14,7 @@ def readme():
 
 setuptools.setup(
     name="geeup",
-    version="0.4.9",
+    version="0.5.0",
     packages=find_packages(),
     url="https://github.com/samapriya/geeup",
     install_requires=[

@@ -282,6 +282,9 @@ optional arguments:
 ```
 # Changelog
 
+### 0.5.0
+- fixed typo in version check
+
 ### v0.4.9
 - Improvements to redundancy in code
 - Improvements to version check for tool

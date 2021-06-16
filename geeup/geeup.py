@@ -141,7 +141,7 @@ def geeup_version():
             + "========================================================================="
         )
         print(
-            "Current version of pycoral is {} upgrade to lastest version: {}".format(
+            "Current version of geeup is {} upgrade to lastest version: {}".format(
                 pkg_resources.get_distribution("geeup").version,
                 company.string.strip().split(" ")[-1],
             )
