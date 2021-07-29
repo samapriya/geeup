@@ -240,11 +240,11 @@ Optional named arguments:
 ```
 
 ### geeup tabup
-This tool allows you to batch download tables/shapefiles to a folder. It uses a modified version of the image upload and a wrapper around the earthengine upload cli to achieve this while creating folders if they don't exist and reporting on assets and checking on uploads. This only requires a source, destination and your ee authenticated email address. This tool also uses selenium to upload the tables. The table upload tool now allows the user to copy cookie list from your browser and bypass selenium based authentication. It saves the cookie temporarily and uses it automatically till it expires when it asks you for cookie list again. Just use the ```--method cookies``` argument.
+This tool allows you to batch download tables/shapefiles/CSVs to a folder. It uses a modified version of the image upload and a wrapper around the earthengine upload cli to achieve this while creating folders if they don't exist and reporting on assets and checking on uploads. This only requires a source, destination and your ee authenticated email address. This tool also uses selenium to upload the tables. The table upload tool now allows the user to copy cookie list from your browser and bypass selenium based authentication. It saves the cookie temporarily and uses it automatically till it expires when it asks you for cookie list again. Just use the ```--method cookies``` argument.
 
 ```
 usage: geeup tabup [-h] --source SOURCE --dest DEST [-u USER]
-                   [--method METHOD]
+                   [--method METHOD] [--x X] [--y Y]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -255,6 +255,10 @@ Required named arguments.:
                         Engine, e.g. users/pinkiepie/myponycollection
   -u USER, --user USER  Google account name (gmail address).
   --method METHOD       Choose method <cookies> to use cookies to authenticate
+
+Optional named arguments:
+  --x X                 Column with longitude value
+  --y Y                 Column with latitude value
 ```
 
 ### geeup tasks
@@ -281,6 +285,10 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 # Changelog
+
+### 0.5.1
+- Now support both zipped shapefile as well as batch CSV upload
+- General Improvements
 
 ### 0.5.0
 - fixed typo in version check

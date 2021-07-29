@@ -14,11 +14,11 @@ def readme():
 
 setuptools.setup(
     name="geeup",
-    version="0.5.0",
+    version="0.5.1",
     packages=find_packages(),
     url="https://github.com/samapriya/geeup",
     install_requires=[
-        "earthengine_api >= 0.1.238",
+        "earthengine_api>=0.1.274",
         "logzero>=1.5.0",
         "requests >= 2.10.0",
         "retrying >= 1.3.3",
@@ -44,7 +44,7 @@ setuptools.setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     classifiers=(
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 6 - Mature",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Natural Language :: English",

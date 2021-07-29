@@ -348,7 +348,12 @@ def upload_from_parser(args):
 
 def tabup_from_parser(args):
     seltabup(
-        uname=args.user, dirc=args.source, destination=args.dest, method=args.method
+        uname=args.user,
+        dirc=args.source,
+        destination=args.dest,
+        method=args.method,
+        x=args.x,
+        y=args.y,
     )
 
 
@@ -546,7 +551,7 @@ def main(args=None):
     )
     required_named.add_argument(
         "--dest",
-        help="Destination. Full path for upload to Google Earth Engine, e.g. users/pinkiepie/myponycollection",
+        help="Destination. Full path for upload to Google Earth Engine image collection, e.g. users/pinkiepie/myponycollection",
         required=True,
     )
     required_named.add_argument(
@@ -579,12 +584,12 @@ def main(args=None):
     required_named = parser_tabup.add_argument_group("Required named arguments.")
     required_named.add_argument(
         "--source",
-        help="Path to the directory with zipped folder for upload.",
+        help="Path to the directory with zipped files or CSV files for upload.",
         required=True,
     )
     required_named.add_argument(
         "--dest",
-        help="Destination. Full path for upload to Google Earth Engine, e.g. users/pinkiepie/myponycollection",
+        help="Destination. Full path for upload to Google Earth Engine folder, e.g. users/pinkiepie/myfolder",
         required=True,
     )
     required_named.add_argument(
@@ -594,6 +599,15 @@ def main(args=None):
         "--method",
         help="Choose method <cookies> to use cookies to authenticate",
         default=None,
+    )
+    optional_named = parser_tabup.add_argument_group("Optional named arguments")
+    optional_named.add_argument(
+        "--x",
+        help="Column with longitude value",
+    )
+    optional_named.add_argument(
+        "--y",
+        help="Column with latitude value",
     )
     parser_tabup.set_defaults(func=tabup_from_parser)
 

@@ -1,8 +1,12 @@
 # Changelog
 
+### 0.5.1
+- Now support both zipped shapefile as well as batch CSV upload
+- General Improvements
+
 ### 0.5.0
 - fixed typo in version check
-- 
+-
 ### v0.4.9
 - Improvements to redundancy in code
 - Improvements to version check for tool

@@ -166,8 +166,8 @@ def upload(
                         # j['tilesets'][0]['sources'][0]['primaryPath']=gsid
                         if "system:time_start" in j:
                             start = str(j["system:time_start"])
-                            if len(start)==12:
-                                start=int(round(int(start)*0.001))
+                            if len(start) == 12:
+                                start = int(round(int(start) * 0.001))
                             else:
                                 start = int(str(start)[:10])
                             j.pop("system:time_start")
@@ -175,8 +175,8 @@ def upload(
                             start = None
                         if "system:time_end" in j:
                             end = str(j["system:time_end"])
-                            if len(end)==12:
-                                end=int(round(int(end)*0.001))
+                            if len(end) == 12:
+                                end = int(round(int(end) * 0.001))
                             else:
                                 end = int(str(end)[:10])
                             j.pop("system:time_end")

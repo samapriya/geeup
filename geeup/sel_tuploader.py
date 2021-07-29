@@ -37,6 +37,7 @@ sys.path.append(lp)
 table_exists = []
 gee_table_exists = []
 
+
 def cookie_check(cookie_list):
     cook_list = []
     for items in cookie_list:
@@ -54,7 +55,8 @@ def cookie_check(cookie_list):
     else:
         return False
 
-def get_auth_session(method,uname):
+
+def get_auth_session(method, uname):
     if method is not None and method == "cookies":
         platform_info = platform.system().lower()
         if str(platform.system().lower()) == "linux":
@@ -79,9 +81,7 @@ def get_auth_session(method,uname):
                         "Cookies Expired | Enter your Cookie List:  "
                     )
                 except Exception as e:
-                    cookie_list = input(
-                        "Cookies Expired | Enter your Cookie List:  "
-                    )
+                    cookie_list = input("Cookies Expired | Enter your Cookie List:  ")
                 with open("cookie_jar.json", "w") as outfile:
                     json.dump(json.loads(cookie_list), outfile)
                     cookie_list = json.loads(cookie_list)
@@ -125,16 +125,12 @@ def get_auth_session(method,uname):
                 "https://stackoverflow.com/users/signup?ssrc=head&returnurl=%2fusers%2fstory%2fcurrent%27"
             )
             time.sleep(5)
-            driver.find_element_by_xpath(
-                '//*[@id="openid-buttons"]/button[1]'
-            ).click()
+            driver.find_element_by_xpath('//*[@id="openid-buttons"]/button[1]').click()
             time.sleep(5)
             driver.find_element_by_xpath('//input[@type="email"]').send_keys(uname)
             driver.find_element_by_xpath("//div[@id='identifierNext']").click()
             time.sleep(5)
-            driver.find_element_by_xpath('//input[@type="password"]').send_keys(
-                passw
-            )
+            driver.find_element_by_xpath('//input[@type="password"]').send_keys(passw)
             driver.find_element_by_xpath('//*[@id="passwordNext"]').click()
             time.sleep(5)
             driver.get("https://code.earthengine.google.com")
@@ -150,13 +146,18 @@ def get_auth_session(method,uname):
         driver.close()
         return session
 
-def seltabup(dirc, uname, destination, method):
+
+def seltabup(dirc, uname, destination, method, x, y):
     ee.Initialize()
-    session=get_auth_session(method,uname)
+    session = get_auth_session(method, uname)
     for (root, directories, files) in os.walk(dirc):
         for filename in files:
             if filename.endswith(".zip"):
                 table_exists.append(filename.split(".zip")[0])
+                base_ext = ".zip"
+            elif filename.endswith(".csv"):
+                table_exists.append(filename.split(".csv")[0])
+                base_ext = ".csv"
     try:
         destination_info = ee.data.getAsset(destination + "/")
         full_path_to_collection = destination_info["name"]
@@ -182,7 +183,9 @@ def seltabup(dirc, uname, destination, method):
         full_path_to_collection = destination_info["name"]
     diff_set = set(table_exists) - set(gee_table_exists)
     if len(diff_set) != 0:
-        auth_check = session.get("https://code.earthengine.google.com/assets/upload/geturl")
+        auth_check = session.get(
+            "https://code.earthengine.google.com/assets/upload/geturl"
+        )
         if (
             auth_check.status_code == 200
             and auth_check.headers.get("content-type").split(";")[0]
@@ -192,8 +195,8 @@ def seltabup(dirc, uname, destination, method):
                 i = 1
                 file_count = len(diff_set)
                 for item in list(diff_set):
-                    full_path_to_table = os.path.join(root, item + ".zip")
-                    file_name = item + ".zip"
+                    full_path_to_table = os.path.join(root, item + base_ext)
+                    file_name = item + base_ext
                     r = session.get(
                         "https://code.earthengine.google.com/assets/upload/geturl"
                     )
@@ -201,46 +204,109 @@ def seltabup(dirc, uname, destination, method):
                     upload_url = d["url"]
                     with open(full_path_to_table, "rb") as f:
                         try:
-                            m = MultipartEncoder(fields={"zip_file": (file_name, f)})
-                            resp = session.post(
-                                upload_url,
-                                data=m,
-                                headers={"Content-Type": m.content_type},
-                            )
-                            gsid = resp.json()[0]
-                            asset_full_path = (
-                                full_path_to_collection + "/" + item.split(".")[0]
-                            )
-                            main_payload = {
-                                "name": asset_full_path,
-                                "sources": [
-                                    {
-                                        "charset": "UTF-8",
-                                        "maxErrorMeters": 1,
-                                        "maxVertices": 1000000,
-                                        "uris": [gsid],
+                            if base_ext == ".zip":
+                                m = MultipartEncoder(
+                                    fields={"zip_file": (file_name, f)}
+                                )
+                                resp = session.post(
+                                    upload_url,
+                                    data=m,
+                                    headers={"Content-Type": m.content_type},
+                                )
+                                gsid = resp.json()[0]
+                                asset_full_path = (
+                                    full_path_to_collection + "/" + item.split(".")[0]
+                                )
+                                main_payload = {
+                                    "name": asset_full_path,
+                                    "sources": [
+                                        {
+                                            "charset": "UTF-8",
+                                            "maxErrorMeters": 1,
+                                            "maxVertices": 1000000,
+                                            "uris": [gsid],
+                                        }
+                                    ],
+                                }
+                                with open(
+                                    os.path.join(lp, "data.json"), "w"
+                                ) as outfile:
+                                    json.dump(main_payload, outfile)
+                                output = subprocess.check_output(
+                                    "earthengine upload table --manifest "
+                                    + '"'
+                                    + os.path.join(lp, "data.json")
+                                    + '"',
+                                    shell=True,
+                                )
+                                print(
+                                    "Ingesting "
+                                    + str(i)
+                                    + " of "
+                                    + str(file_count)
+                                    + " "
+                                    + str(os.path.basename(asset_full_path))
+                                    + " Task Id: "
+                                    + output.decode("ascii").strip().split(" ")[-1]
+                                )
+                            elif base_ext == ".csv":
+                                m = MultipartEncoder(
+                                    fields={"csv_file": (file_name, f)}
+                                )
+                                resp = session.post(
+                                    upload_url,
+                                    data=m,
+                                    headers={"Content-Type": m.content_type},
+                                )
+                                gsid = resp.json()[0]
+                                asset_full_path = (
+                                    full_path_to_collection + "/" + item.split(".")[0]
+                                )
+                                if x and y is not None:
+                                    main_payload = {
+                                        "name": asset_full_path,
+                                        "sources": [
+                                            {
+                                                "charset": "UTF-8",
+                                                "maxErrorMeters": 1,
+                                                "uris": [gsid],
+                                                "xColumn": x,
+                                                "yColumn": y,
+                                            }
+                                        ],
                                     }
-                                ],
-                            }
-                            with open(os.path.join(lp, "data.json"), "w") as outfile:
-                                json.dump(main_payload, outfile)
-                            output = subprocess.check_output(
-                                "earthengine upload table --manifest "
-                                + '"'
-                                + os.path.join(lp, "data.json")
-                                + '"',
-                                shell=True,
-                            )
-                            print(
-                                "Ingesting "
-                                + str(i)
-                                + " of "
-                                + str(file_count)
-                                + " "
-                                + str(os.path.basename(asset_full_path))
-                                + " Task Id: "
-                                + output.decode("ascii").strip().split(" ")[-1]
-                            )
+                                else:
+                                    main_payload = {
+                                        "name": asset_full_path,
+                                        "sources": [
+                                            {
+                                                "charset": "UTF-8",
+                                                "maxErrorMeters": 1,
+                                                "uris": [gsid],
+                                            }
+                                        ],
+                                    }
+                                with open(
+                                    os.path.join(lp, "data.json"), "w"
+                                ) as outfile:
+                                    json.dump(main_payload, outfile)
+                                output = subprocess.check_output(
+                                    "earthengine upload table --manifest "
+                                    + '"'
+                                    + os.path.join(lp, "data.json")
+                                    + '"',
+                                    shell=True,
+                                )
+                                print(
+                                    "Ingesting "
+                                    + str(i)
+                                    + " of "
+                                    + str(file_count)
+                                    + " "
+                                    + str(os.path.basename(asset_full_path))
+                                    + " Task Id: "
+                                    + output.decode("ascii").strip().split(" ")[-1]
+                                )
                         except Exception as e:
                             print(e)
                         i = i + 1
