@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.5.2
+- Fixed GDAL check for package
+
 ### 0.5.1
 - Now support both zipped shapefile as well as batch CSV upload
 - General Improvements
