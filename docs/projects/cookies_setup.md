@@ -10,7 +10,7 @@ It does exactly one thing, copies cookies over and in this case we are copying o
 
 **Import things to Note**
 
-* Open a brand new incognito or a browser window while you are copying cookies, if you have multiple GEE accounts open on the same browser the cookies being copied may create some read issues at GEE end.
+* Open a brand browser window while you are copying cookies (do not use an incognito window as GEE does not load all cookies needed), if you have multiple GEE accounts open on the same browser the cookies being copied may create some read issues at GEE end.
 * Clear cookies and make sure you are copying cookies from [code.earthengine.google](https://code.earthengine.google.com) in a fresh browser instance if upload fails with a ```Unable to read``` error.
 * Make sure you save the cookie for the same account which you initiliazed using earthengine authenticate
 
