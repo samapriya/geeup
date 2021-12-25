@@ -34,6 +34,7 @@ jobs:
       if: matrix.os == 'windows-latest'
     - name: Test package
       run: |
+        pip install Cython
         pip install -r requirements.txt
         python setup.py install
         geeup -h
