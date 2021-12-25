@@ -41,7 +41,7 @@ jobs:
       continue-on-error: true
       run:
         sudo apt-get install proj-bin
-        pip install pyproj==2.6.1
+        pip install pyproj
       if: matrix.os == 'ubuntu-latest'
     - name: Test package
       run: |
