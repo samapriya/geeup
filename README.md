@@ -112,7 +112,7 @@ earthengine authenticate --quiet
 
 As usual, to print help:
 
-![geeup_main](https://user-images.githubusercontent.com/6677629/147895213-b26760b7-93d0-4484-b939-c74809833d30.png)
+![geeup_main](https://user-images.githubusercontent.com/6677629/147896906-5b421ba5-de0d-47de-bb88-e4a0edce6528.png)
 
 To obtain help for specific functionality, simply call it with _help_ switch, e.g.: `geeup zipshape -h`. If you didn't install geeup, then you can run it just by going to *geeup* directory and running `python geeup.py [arguments go here]`
 

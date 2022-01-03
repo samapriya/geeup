@@ -13,7 +13,7 @@ This tool came of the simple need to handle batch uploads of both image assets t
 -If you find this tool useful, star and cite it as below
 
 
-![geeup_main](https://user-images.githubusercontent.com/6677629/147895213-b26760b7-93d0-4484-b939-c74809833d30.png)
+![geeup_main](https://user-images.githubusercontent.com/6677629/147896906-5b421ba5-de0d-47de-bb88-e4a0edce6528.png)
 
 
 If you use this tool to download data for your research, and find this tool useful, star and cite it as below

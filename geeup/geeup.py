@@ -453,7 +453,7 @@ spacing = "                               "
 
 def main(args=None):
     parser = argparse.ArgumentParser(
-        description="Simple Client for Earth Engine Uploads with Selenium Support"
+        description="Simple Client for Earth Engine Uploads"
     )
 
     subparsers = parser.add_subparsers()
