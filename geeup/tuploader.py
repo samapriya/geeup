@@ -23,8 +23,6 @@ import ee
 import sys
 import json
 import platform
-from selenium.webdriver import Firefox
-from selenium.webdriver.firefox.options import Options
 from requests_toolbelt import MultipartEncoder
 import time
 import os

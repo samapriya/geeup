@@ -60,8 +60,6 @@ import ee
 import pandas as pd
 import subprocess
 import retrying
-from selenium.webdriver import Firefox
-from selenium.webdriver.firefox.options import Options
 from requests_toolbelt import MultipartEncoder
 from .metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
 
