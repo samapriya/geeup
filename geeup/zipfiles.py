@@ -48,7 +48,7 @@ def zipshape(directory, export):
                             + " SKIPPING"
                         )
                 except:
-                    pass
+                    logger.exception(e)
 
 
 # get_all_file_paths(directory=r"C:\Users\samapriya\Downloads\nexgengrid",export=r'D:\Library')

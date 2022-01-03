@@ -1,6 +1,6 @@
 # Cookies Setup
 
-This method was added since v0.4.6 and uses a third party chrome extension to simply code all cookies. The chrome extension is simply the first one I found and is no way related to the project and as such I do not extend any support or warranty for it.
+This method was added since v0.4.6 and uses a third party chrome extension to simply code all cookies. The chrome extension is simply the first one I found and is no way related to the project and as such I do not extend any support or warranty for it. Since is now the default method for all forms of upload since GEE disabled incompatible browser as such using selenium as a method was no longer viable.
 
 The chrome extension I am using is called [Copy Cookies and you can find it here](https://chrome.google.com/webstore/detail/copy-cookies/jcbpglbplpblnagieibnemmkiamekcdg/related)
 
@@ -25,5 +25,7 @@ geeup cookie_setup
 * Disable cannonical mode by typing ```stty -icanon``` in terminal
 * Then run ```geeup cookie_setup```
 * Once done reenable cannonical mode by typing ```stty icanon``` in terminal
+
+**For mac users change default login shell from /bin/zsh to /bin/sh, the command stty -icanon works as expected, thanks to [Issue 41](https://github.com/samapriya/geeup/issues/41)**
 
 **Since cookies generated here are post login, theoretically it should work on accounts even with two factor auth or university based Single Sign on GEE accounts but might need further testing**

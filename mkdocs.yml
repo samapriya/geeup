@@ -97,8 +97,6 @@ nav:
   - General Installation: installation.md
   - Setup tools:
     - GEE authenticate: projects/ee_init.md
-    - Download Selenium Driver: projects/init.md
-    - Selenium Setup: projects/selenium.md
     - Cookies Setup: projects/cookies_setup.md
     - Quota tool: projects/quota.md
   - Upload tools:

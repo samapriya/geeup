@@ -21,7 +21,7 @@ __license__ = "Apache 2.0"
 
 __Modifications_copyright__ = """
 
-    Copyright 2019 Samapriya Roy
+    Copyright 2021 Samapriya Roy
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ __license__ = "Apache 2.0"
 
 """
 Modifications to file:
-- Uses selenium based upload instead of simple login
+- Uses cookie based upload
 - Removed multipart upload
 - Uses polling
 """
@@ -76,7 +76,6 @@ slist = []
 def upload(
     user,
     source_path,
-    method,
     pyramiding,
     destination_path,
     metadata_path=None,
@@ -96,12 +95,7 @@ def upload(
 
     metadata = load_metadata_from_csv(metadata_path) if metadata_path else None
 
-    if user and method is not None:
-        password = None
-        google_session = __get_google_auth_session(user, password, method)
-    elif user is not None and method is None:
-        password = getpass.getpass()
-        google_session = __get_google_auth_session(user, password, method)
+    google_session = __get_google_auth_session(user)
 
     __create_image_collection(destination_path)
 
@@ -115,25 +109,14 @@ def upload(
         sys.exit(1)
 
     for current_image_no, image_path in enumerate(images_for_upload_path):
-        print(
-            "Processing image "
-            + str(current_image_no + 1)
-            + " out of "
-            + str(no_images)
-            + ": "
-            + str(image_path)
-        )
+        print(f"Processing image {current_image_no + 1} out of {no_images} : {image_path}")
         filename = __get_filename_from_path(path=image_path)
 
         destination_path = ee.data.getAsset(destination_path + "/")["name"]
         asset_full_path = destination_path + "/" + filename
 
         if metadata and not filename in metadata:
-            print(
-                "No metadata exists for image "
-                + str(filename)
-                + " : it will not be ingested"
-            )
+            print(f"No metadata exists for image: {filename} ==>it will not be ingested")
             continue
 
         properties = metadata[filename] if metadata else None
@@ -220,7 +203,8 @@ def upload(
         except Exception as e:
             print(e)
             print("Upload of " + str(filename) + " has failed.")
-
+        except (KeyboardInterrupt, SystemExit) as e:
+            sys.exit("Program escaped by User")
 
 def __verify_path_for_upload(path):
     folder = path[: path.rfind("/")]
@@ -330,97 +314,61 @@ def cookie_check(cookie_list):
         return False
 
 
-def __get_google_auth_session(username, password, method):
+def __get_google_auth_session(username):
     ee.Initialize()
-    if method is not None and method == "cookies":
-        platform_info = platform.system().lower()
-        if str(platform.system().lower()) == "linux":
-            subprocess.check_call(["stty", "-icanon"])
-        if not os.path.exists("cookie_jar.json"):
-            try:
-                cookie_list = raw_input("Enter your Cookie List:  ")
-            except Exception as e:
-                cookie_list = input("Enter your Cookie List:  ")
+    platform_info = platform.system().lower()
+    if str(platform_info) == "linux" or str(platform_info) == "darwin":
+        subprocess.check_call(["stty", "-icanon"])
+    if not os.path.exists("cookie_jar.json"):
+        try:
+            cookie_list = raw_input("Enter your Cookie List:  ")
+        except Exception:
+            cookie_list = input("Enter your Cookie List:  ")
+        finally:
             with open("cookie_jar.json", "w") as outfile:
                 json.dump(json.loads(cookie_list), outfile)
-            cookie_list = json.loads(cookie_list)
-        elif os.path.exists("cookie_jar.json"):
-            with open("cookie_jar.json") as json_file:
-                cookie_list = json.load(json_file)
-            if cookie_check(cookie_list) is True:
-                print("Using saved Cookies")
-                cookie_list = cookie_list
-            elif cookie_check(cookie_list) is False:
-                try:
-                    cookie_list = raw_input(
-                        "Cookies Expired | Enter your Cookie List:  "
-                    )
-                except Exception as e:
-                    cookie_list = input("Cookies Expired | Enter your Cookie List:  ")
+        cookie_list = json.loads(cookie_list)
+    elif os.path.exists("cookie_jar.json"):
+        with open("cookie_jar.json") as json_file:
+            cookie_list = json.load(json_file)
+        if cookie_check(cookie_list) is True:
+            print("Using saved Cookies")
+            cookie_list = cookie_list
+        elif cookie_check(cookie_list) is False:
+            try:
+                cookie_list = raw_input(
+                    "Cookies Expired | Enter your Cookie List:  "
+                )
+            except Exception:
+                cookie_list = input("Cookies Expired | Enter your Cookie List:  ")
+            finally:
                 with open("cookie_jar.json", "w") as outfile:
                     json.dump(json.loads(cookie_list), outfile)
                     cookie_list = json.loads(cookie_list)
-        time.sleep(5)
-        if str(platform.system().lower()) == "windows":
-            os.system("cls")
-        elif str(platform.system().lower()) == "linux":
-            os.system("clear")
-        elif str(platform.system().lower()) == "darwin":
-            os.system("clear")
-        else:
-            pass
-        session = requests.Session()
-        for cookies in cookie_list:
-            session.cookies.set(cookies["name"], cookies["value"])
-        response = session.get(
-            "https://code.earthengine.google.com/assets/upload/geturl"
-        )
-        if (
-            response.status_code == 200
-            and ast.literal_eval(response.text)["url"] is not None
-        ):
-            return session
-        else:
-            print(response.status_code, response.text)
+    time.sleep(5)
+    if str(platform.system().lower()) == "windows":
+        os.system("cls")
+    elif str(platform.system().lower()) == "linux":
+        os.system("clear")
+        subprocess.check_call(["stty", "icanon"])
+    elif str(platform.system().lower()) == "darwin":
+        os.system("clear")
+        subprocess.check_call(["stty", "icanon"])
     else:
-        options = Options()
-        options.add_argument("-headless")
-        uname = str(username)
-        passw = str(password)
-        if os.name == "nt":
-            driver = Firefox(
-                executable_path=os.path.join(lp, "geckodriver.exe"), options=options
-            )
-        else:
-            driver = Firefox(
-                executable_path=os.path.join(lp, "geckodriver"), options=options
-            )
-        try:
-            # Using stackoverflow for third-party login & redirect
-            driver.get(
-                "https://stackoverflow.com/users/signup?ssrc=head&returnurl=%2fusers%2fstory%2fcurrent%27"
-            )
-            time.sleep(5)
-            driver.find_element_by_xpath('//*[@id="openid-buttons"]/button[1]').click()
-            time.sleep(5)
-            driver.find_element_by_xpath('//input[@type="email"]').send_keys(uname)
-            driver.find_element_by_xpath("//div[@id='identifierNext']").click()
-            time.sleep(5)
-            driver.find_element_by_xpath('//input[@type="password"]').send_keys(passw)
-            driver.find_element_by_xpath('//*[@id="passwordNext"]').click()
-            time.sleep(5)
-            driver.get("https://code.earthengine.google.com")
-            time.sleep(8)
-        except Exception as e:
-            print(e)
-            driver.close()
-            sys.exit("Failed to setup & use selenium")
-        cookies = driver.get_cookies()
-        session = requests.Session()
-        for cookie in cookies:
-            session.cookies.set(cookie["name"], cookie["value"])
-        driver.close()
+        sys.exit(f'Operating system is not supported')
+    session = requests.Session()
+    for cookies in cookie_list:
+        session.cookies.set(cookies["name"], cookies["value"])
+    response = session.get(
+        "https://code.earthengine.google.com/assets/upload/geturl"
+    )
+    if (
+        response.status_code == 200
+        and ast.literal_eval(response.text)["url"] is not None
+    ):
         return session
+    else:
+        print(response.status_code, response.text)
 
 
 def __get_upload_url(session):

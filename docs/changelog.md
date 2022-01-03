@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.5.3
+- Major version removed selenium support as stable method
+- Overall improvements to performance and codebase
+- Updated docs and ReadMe
+
 ### 0.5.2
 - Fixed GDAL check for package
 

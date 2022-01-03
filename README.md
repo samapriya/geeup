@@ -1,6 +1,6 @@
-# geeup: Simple CLI for Earth Engine Uploads with Selenium Support
-[![Twitter URL](https://img.shields.io/twitter/follow/samapriyaroy?style=social)](https://twitter.com/intent/follow?screen_name=samapriyaroy)
+# geeup: Simple CLI for Earth Engine Uploads
 
+[![Twitter URL](https://img.shields.io/twitter/follow/samapriyaroy?style=social)](https://twitter.com/intent/follow?screen_name=samapriyaroy)
 ![](https://tokei.rs/b1/github/samapriya/geeup?category=code)
 ![](https://tokei.rs/b1/github/samapriya/geeup?category=files)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5144379.svg)](https://doi.org/10.5281/zenodo.5144379)
@@ -26,11 +26,10 @@ Zenodo. https://doi.org/10.5281/zenodo.5144379
 * [GEE authenticate](#gee-authenticate)
 * [Getting started](#getting-started)
 * [geeup Simple CLI for Earth Engine Uploads](#geeup-simple-cli-for-earth-engine-uploads)
-    * [geeup init](#geeup-init)
-    * [geeup selsetup](#geeup-selsetup)
     * [geeup Quota](#geeup-quota)
     * [geeup Zipshape](#geeup-zipshape)
     * [geeup getmeta](#geeup-getmeta)
+    * [Cookie Setup](#cookie-setup)
     * [geeup upload](#geeup-upload)
     * [geeup tabup](#geeup-tabup)
     * [geeup tasks](#geeup-tasks)
@@ -113,26 +112,12 @@ earthengine authenticate --quiet
 
 As usual, to print help:
 
-![geeup_main](https://user-images.githubusercontent.com/6677629/114294823-bb9e7d80-9a66-11eb-95fa-07f885622020.png)
+![geeup_main](https://user-images.githubusercontent.com/6677629/147895213-b26760b7-93d0-4484-b939-c74809833d30.png)
 
 To obtain help for specific functionality, simply call it with _help_ switch, e.g.: `geeup zipshape -h`. If you didn't install geeup, then you can run it just by going to *geeup* directory and running `python geeup.py [arguments go here]`
 
 ## geeup Simple CLI for Earth Engine Uploads
 The tool is designed to handle batch uploading of images and tables(shapefiles). While there are image collection where you can batch upload imagery, for vector or shapefiles you have to batch upload them to a folder.
-
-### geeup init
-**This is a key step only if you are going to use selenium method to upload imagery instead of the cookies approach added since v0.4.6. All versions before 0.4.6 requires this step, since all upload function depends on it, so make sure you run this**. This downloads selenium driver and places to your local directory for windows and Linux subsystems. This is the first step to use selenium supported upload.
-
-``` geeup init```
-
-![geeup_init](https://user-images.githubusercontent.com/6677629/114273320-31f79d00-99df-11eb-8960-e4f887cf9b50.gif)
-
-### geeup selsetup
-Once in a while the geckodriver/selenium requires manual input before signing into the google earth engine, this tool will allow you to interact with the initialization of Google Earth Engine code editor window. It allows the user to specify the account they want to use, and should only be needed once.
-
-```geeup selsetup```
-
-![geeup_selsetup](https://user-images.githubusercontent.com/6677629/114273790-24431700-99e1-11eb-86b6-f7971377725c.gif)
 
 ### geeup Quota
 Just a simple tool to print your earth engine quota quickly. Since Google Earth Engine also allows you to use Cloud Projects instead of the standard legacy folders, this tool now has the option to pass the project path (usually **projects/project-name/assets/**)
@@ -185,8 +170,8 @@ Required named arguments.:
 
 ```
 
-### Setting up Cookies
-This method was added since v0.4.6 and uses a third party chrome extension to simply code all cookies. The chrome extension is simply the first one I found and is no way related to the project and as such I do not extend any support or warranty for it.
+### Cookie Setup
+This method was added since v0.4.6 and uses a third party chrome extension to simply code all cookies. This step is now the only stable method for uploads and has to be completed before any upload process. The chrome extension is simply the first one I found and is no way related to the project and as such I do not extend any support or warranty for it.
 
 The chrome extension I am using is called [Copy Cookies and you can find it here](https://chrome.google.com/webstore/detail/copy-cookies/jcbpglbplpblnagieibnemmkiamekcdg/related)
 
@@ -213,52 +198,69 @@ geeup cookie_setup
 * Then run ```geeup cookie_setup```
 * Once done reenable cannonical mode by typing ```stty icanon``` in terminal
 
-*Since cookies generated here are post login, theoretically it should work on accounts even with two factor auth or university based Single Sign on GEE accounts but might need further testing*
+**For mac users change default login shell from /bin/zsh to /bin/sh, the command stty -icanon works as expected, thanks to [Issue 41](https://github.com/samapriya/geeup/issues/41)**
+
+**Since cookies generated here are post login, theoretically it should work on accounts even with two factor auth or university based Single Sign on GEE accounts but might need further testing**
 
 ### geeup upload
-The script creates an Image Collection from GeoTIFFs in your local directory. By default, the image name in the collection is the same as the local directory name. The upload tool now allows the user to copy cookie list from your browser and bypass selenium based authentication. It saves the cookie temporarily and uses it automatically till it expires when it asks you for cookie list again. Just use the ```--method cookies``` argument.
+The script creates an Image Collection from GeoTIFFs in your local directory. By default, the image name in the collection is the same as the local directory name. The upload tool now allows only supports using cookies from your browser for uploads. It saves the cookie temporarily and uses it automatically till it expires when it asks you for cookie list again. For more details on [cookie setup go here](https://samapriya.github.io/geeup/projects/cookies_setup/). Optional arguments now includes passing both Pyramiding strategy (default is set to Mean) as well as no data value.
 
 ```
-usage: geeup upload [-h] --source SOURCE --dest DEST -m METADATA
-                    [--nodata NODATA] [-u USER] [--method METHOD]
+geeup upload -h
+usage: geeup upload [-h] --source SOURCE --dest DEST -m METADATA [--nodata NODATA] [--pyramids PYRAMIDS] [-u USER]
 
 optional arguments:
   -h, --help            show this help message and exit
 
 Required named arguments.:
   --source SOURCE       Path to the directory with images for upload.
-  --dest DEST           Destination. Full path for upload to Google Earth
-                        Engine, e.g. users/pinkiepie/myponycollection
+  --dest DEST           Destination. Full path for upload to Google Earth Engine image collection, e.g. users/pinkiepie/myponycollection
   -m METADATA, --metadata METADATA
                         Path to CSV with metadata.
   -u USER, --user USER  Google account name (gmail address).
-  --method METHOD       Choose method <cookies> to use cookies to authenticate
 
 Optional named arguments:
-  --nodata NODATA       The value to burn into the raster as NoData (missing
-                        data)
+  --nodata NODATA       The value to burn into the raster as NoData (missing data)
+  --pyramids PYRAMIDS   Pyramiding Policy, MEAN, MODE, MIN, MAX, SAMPLE
+```
+
+Example setup would be
+
+![gee_upload](https://user-images.githubusercontent.com/6677629/147895638-3d542ea5-2c72-43b7-8052-c5edef0ab717.gif)
+
+If you are using cookies for image upload setup would be
+
+```
+geeup upload --source "full path to folder with GeoTIFFs" --dest "Full path for upload to Google Earth Engine, e.g. users/pinkiepie/myponycollection" --metadata "Full path for metadata file.csv" --user "email@domain.com authenticated and used with GEE" --nodata 0 --pyramids MODE
 ```
 
 ### geeup tabup
-This tool allows you to batch download tables/shapefiles/CSVs to a folder. It uses a modified version of the image upload and a wrapper around the earthengine upload cli to achieve this while creating folders if they don't exist and reporting on assets and checking on uploads. This only requires a source, destination and your ee authenticated email address. This tool also uses selenium to upload the tables. The table upload tool now allows the user to copy cookie list from your browser and bypass selenium based authentication. It saves the cookie temporarily and uses it automatically till it expires when it asks you for cookie list again. Just use the ```--method cookies``` argument.
+This tool allows you to batch download tables/shapefiles/CSVs to a folder. It uses a modified version of the image upload and a wrapper around the earthengine upload cli to achieve this while creating folders if they don't exist and reporting on assets and checking on uploads. This only requires a source, destination and your ee authenticated email address. The table upload tool now allows only supports using cookies from your browser for uploads. It saves the cookie temporarily and uses it automatically till it expires when it asks you for cookie list again. For more details on [cookie setup go here](https://samapriya.github.io/geeup/projects/cookies_setup/).
 
 ```
-usage: geeup tabup [-h] --source SOURCE --dest DEST [-u USER]
-                   [--method METHOD] [--x X] [--y Y]
+geeup tabup -h
+usage: geeup tabup [-h] --source SOURCE --dest DEST [-u USER] [--x X] [--y Y]
 
 optional arguments:
   -h, --help            show this help message and exit
 
 Required named arguments.:
-  --source SOURCE       Path to the directory with zipped folder for upload.
-  --dest DEST           Destination. Full path for upload to Google Earth
-                        Engine, e.g. users/pinkiepie/myponycollection
+  --source SOURCE       Path to the directory with zipped files or CSV files for upload.
+  --dest DEST           Destination. Full path for upload to Google Earth Engine folder, e.g. users/pinkiepie/myfolder
   -u USER, --user USER  Google account name (gmail address).
-  --method METHOD       Choose method <cookies> to use cookies to authenticate
 
 Optional named arguments:
   --x X                 Column with longitude value
   --y Y                 Column with latitude value
+```
+Example setup
+
+![gee_tabup](https://user-images.githubusercontent.com/6677629/147895900-4e4a14c4-ed89-4d3d-8572-b96198703ade.gif)
+
+If you are using cookies for table upload setup would be
+
+```
+geeup tabup --source "full path to folder with Zipped Shapefiles/CSV files" --dest "Full path for upload to Google Earth Engine, e.g. users/pinkiepie/folder" --user "email@domain.com authenticated and used with GEE"
 ```
 
 ### geeup tasks
@@ -285,6 +287,11 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 # Changelog
+
+### 0.5.3
+- Major version removed selenium support as stable method
+- Overall improvements to performance and codebase
+- Updated docs and ReadMe
 
 ### 0.5.2
 - Fixed GDAL check for package

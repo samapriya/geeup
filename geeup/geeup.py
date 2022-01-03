@@ -29,6 +29,7 @@ import platform
 import subprocess
 import webbrowser
 import time
+from logzero import logger
 from bs4 import BeautifulSoup
 from os.path import expanduser
 
@@ -62,7 +63,7 @@ if str(platform.system().lower()) == "windows":
         )
         subprocess.call("pipwin refresh", shell=True)
     except Exception as e:
-        print(e)
+        logger.exception(e)
     try:
         import gdal
     except ImportError:
@@ -73,39 +74,39 @@ if str(platform.system().lower()) == "windows":
     except ModuleNotFoundError or ImportError:
         subprocess.call("pipwin install gdal", shell=True)
     except Exception as e:
-        print(e)
+        logger.exception(e)
     try:
         import pandas
     except ImportError:
         subprocess.call("pipwin install pandas", shell=True)
     except Exception as e:
-        print(e)
+        logger.exception(e)
     try:
         import pyproj
     except ImportError:
         subprocess.call("pipwin install pyproj", shell=True)
     except Exception as e:
-        print(e)
+        logger.exception(e)
     try:
         import shapely
     except ImportError:
         subprocess.call("pipwin install shapely", shell=True)
     except Exception as e:
-        print(e)
+        logger.exception(e)
     try:
         import fiona
     except ImportError:
         subprocess.call("pipwin install fiona", shell=True)
     except Exception as e:
-        print(e)
+        logger.exception(e)
     try:
         import geopandas
     except ImportError:
         subprocess.call("pipwin install geopandas", shell=True)
     except Exception as e:
-        print(e)
+        logger.exception(e)
 from .batch_uploader import upload
-from .sel_tuploader import seltabup
+from .tuploader import tabup
 from .zipfiles import zipshape
 from .getmeta import getmeta
 
@@ -180,64 +181,41 @@ def readme():
             print("Your setup does not have a monitor to display the webpage")
             print(" Go to {}".format("https://samapriya.github.io/geeup/"))
     except Exception as e:
-        print(e)
+        logger.exception(e)
 
 
 def read_from_parser(args):
     readme()
 
 
-# Download latest geckodriver
-def update():
-    if str(platform.system().lower()) == "windows":
-        os.system("python sel-latest-win.py")
-    elif str(platform.system().lower()) == "linux":
-        os.system("python sel-latest-linux.py")
-    elif str(platform.system().lower()) == "darwin":
-        os.system("python sel-latest-mac.py")
-    else:
-        print("Architecture not recognized")
-
-
-def init_from_parser(args):
-    update()
-
-
 # cookie setup
 def cookie_setup():
     platform_info = platform.system().lower()
-    if str(platform.system().lower()) == "linux":
+    if str(platform_info) == "linux" or str(platform_info) == "darwin":
         subprocess.check_call(["stty", "-icanon"])
     try:
         cookie_list = raw_input("Enter your Cookie List:  ")
-    except Exception as e:
+    except Exception:
         cookie_list = input("Enter your Cookie List:  ")
-    if str(platform.system().lower()) == "linux":
-        subprocess.check_call(["stty", "icanon"])
-    with open("cookie_jar.json", "w") as outfile:
-        json.dump(json.loads(cookie_list), outfile)
+    finally:
+        with open("cookie_jar.json", "w") as outfile:
+            json.dump(json.loads(cookie_list), outfile)
     time.sleep(3)
-    if str(platform.system().lower()) == "windows":
+    if str(platform_info) == "windows":
         os.system("cls")
-    elif str(platform.system().lower()) == "linux":
+    elif str(platform_info) == "linux":
         os.system("clear")
-    elif str(platform.system().lower()) == "darwin":
+        subprocess.check_call(["stty", "icanon"])
+    elif str(platform_info) == "darwin":
         os.system("clear")
+        subprocess.check_call(["stty", "icanon"])
     else:
-        pass
+        sys.exit('Operating system not supported')
     print("\n" + "Cookie Setup completed")
 
 
 def cookie_setup_from_parser(args):
     cookie_setup()
-
-
-def selsetup():
-    os.system("python sel_setup.py")
-
-
-def selsetup_from_parser(args):
-    selsetup()
 
 
 suffixes = ["B", "KB", "MB", "GB", "TB", "PB"]
@@ -289,7 +267,7 @@ def quota(project):
                     )
                 )
         except Exception as e:
-            print(e)
+            logger.exception(e)
     else:
         for roots in ee.data.getAssetRoots():
             quota = ee.data.getAssetRootQuota(roots["id"])
@@ -346,17 +324,15 @@ def upload_from_parser(args):
         destination_path=args.dest,
         metadata_path=args.metadata,
         nodata_value=args.nodata,
-        method=args.method,
         pyramiding=args.pyramids,
     )
 
 
 def tabup_from_parser(args):
-    seltabup(
+    tabup(
         uname=args.user,
         dirc=args.source,
         destination=args.dest,
-        method=args.method,
         x=args.x,
         y=args.y,
     )
@@ -368,11 +344,11 @@ def tasks():
     st = []
     for status in statuses:
         st.append(status["metadata"]["state"])
-    print("Tasks Running: " + str(st.count("RUNNING")))
-    print("Tasks Pending: " + str(st.count("PENDING")))
-    print("Tasks Completed: " + str(st.count("SUCCEEDED")))
-    print("Tasks Failed: " + str(st.count("FAILED")))
-    print("Tasks Cancelled: " + str(st.count("CANCELLED") + st.count("CANCELLING")))
+    print(f"Tasks Running: {st.count('RUNNING')}")
+    print(f"Tasks Pending: {st.count('PENDING')}")
+    print(f"Tasks Completed: {st.count('SUCCEEDED')}")
+    print(f"Tasks Failed: {st.count('FAILED')}")
+    print(f"Tasks Cancelled: {st.count('CANCELLED') + st.count('CANCELLING')}")
 
 
 def tasks_from_parser(args):
@@ -399,7 +375,7 @@ def cancel_tasks(tasks):
             elif len(all_tasks) == 0:
                 print("No Running or Pending tasks found")
         except Exception as e:
-            print(e)
+            logger.exception(e)
     elif tasks == "running":
         try:
             print("Attempting to cancel running tasks")
@@ -417,7 +393,7 @@ def cancel_tasks(tasks):
             elif len(running_tasks) == 0:
                 print("No Running tasks found")
         except Exception as e:
-            print(e)
+            logger.exception(e)
     elif tasks == "pending":
         try:
             print("Attempting to cancel queued tasks or pending tasks")
@@ -435,7 +411,7 @@ def cancel_tasks(tasks):
             elif len(ready_tasks) == 0:
                 print("No Pending tasks found")
         except Exception as e:
-            print(e)
+            logger.exception(e)
     elif tasks is not None:
         try:
             print("Attempting to cancel task with given task ID {}".format(tasks))
@@ -465,7 +441,7 @@ def delete(ids):
         print("Recursively deleting path: {}".format(ids))
         subprocess.call("earthengine rm -r " + ids)
     except Exception as e:
-        print(e)
+        logger.exception(e)
 
 
 def delete_collection_from_parser(args):
@@ -487,26 +463,8 @@ def main(args=None):
     )
     parser_read.set_defaults(func=read_from_parser)
 
-    parser_init = subparsers.add_parser(
-        "init",
-        help="Initializes the tool by downloading and updating selenium drivers for firefox",
-    )
-    parser_init.set_defaults(func=init_from_parser)
-
-    parser_cookie_setup = subparsers.add_parser(
-        "cookie_setup",
-        help="Setup cookies to be used for upload if using the method <cookies>",
-    )
-    parser_cookie_setup.set_defaults(func=cookie_setup_from_parser)
-
-    parser_selsetup = subparsers.add_parser(
-        "selsetup",
-        help="Non headless setup for new google account, use if upload throws errors",
-    )
-    parser_selsetup.set_defaults(func=selsetup_from_parser)
-
     parser_quota = subparsers.add_parser(
-        "quota", help="Print Earth Engine total quota and used quota"
+        "quota", help="Print Earth Engine storage and asset count quota"
     )
     optional_named = parser_quota.add_argument_group("Optional named arguments")
     optional_named.add_argument(
@@ -518,7 +476,7 @@ def main(args=None):
 
     parser_zipshape = subparsers.add_parser(
         "zipshape",
-        help="Zips all shapefiles and subsidary files into individual zip files",
+        help="Zips all shapefiles and subsidary files in folder into individual zip files",
     )
     required_named = parser_zipshape.add_argument_group("Required named arguments.")
     required_named.add_argument(
@@ -528,7 +486,7 @@ def main(args=None):
     )
     required_named.add_argument(
         "--output",
-        help="Destination folder Full path where shp, shx, prj and dbf files if present in input will be zipped and stored",
+        help="Destination folder Full path where shp, shx, prj and dbf files if present will be zipped and stored",
         required=True,
     )
     parser_zipshape.set_defaults(func=zipshape_from_parser)
@@ -547,8 +505,14 @@ def main(args=None):
     )
     parser_getmeta.set_defaults(func=getmeta_from_parser)
 
+    parser_cookie_setup = subparsers.add_parser(
+        "cookie_setup",
+        help="Setup cookies to be used for upload",
+    )
+    parser_cookie_setup.set_defaults(func=cookie_setup_from_parser)
+
     parser_upload = subparsers.add_parser(
-        "upload", help="Batch Asset Uploader using Selenium"
+        "upload", help="Batch Image Uploader for uploading tif files to a GEE collection"
     )
     required_named = parser_upload.add_argument_group("Required named arguments.")
     required_named.add_argument(
@@ -575,16 +539,11 @@ def main(args=None):
     required_named.add_argument(
         "-u", "--user", help="Google account name (gmail address)."
     )
-    required_named.add_argument(
-        "--method",
-        help="Choose method <cookies> to use cookies to authenticate",
-        default=None,
-    )
 
     parser_upload.set_defaults(func=upload_from_parser)
 
     parser_tabup = subparsers.add_parser(
-        "tabup", help="Batch Table Uploader using Selenium."
+        "tabup", help="Batch Table Uploader for uploading shapefiles/CSVs to a GEE folder"
     )
     required_named = parser_tabup.add_argument_group("Required named arguments.")
     required_named.add_argument(
@@ -599,11 +558,6 @@ def main(args=None):
     )
     required_named.add_argument(
         "-u", "--user", help="Google account name (gmail address)."
-    )
-    required_named.add_argument(
-        "--method",
-        help="Choose method <cookies> to use cookies to authenticate",
-        default=None,
     )
     optional_named = parser_tabup.add_argument_group("Optional named arguments")
     optional_named.add_argument(

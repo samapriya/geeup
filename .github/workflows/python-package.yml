@@ -50,4 +50,3 @@ jobs:
         pip install -r requirements.txt
         python setup.py install
         geeup -h
-        geeup init
