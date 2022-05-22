@@ -21,7 +21,7 @@ __license__ = "Apache 2.0"
 
 __Modifications_copyright__ = """
 
-    Copyright 2021 Samapriya Roy
+    Copyright 2022 Samapriya Roy
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ import retrying
 from natsort import natsorted
 from requests_toolbelt import MultipartEncoder
 
-from .metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
+from .metadata_loader import load_metadata_from_csv
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 lp = os.path.dirname(os.path.realpath(__file__))
@@ -85,6 +85,11 @@ def upload(
 
     ee.Initialize()
 
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)-4s %(message)s",
+        level=logging.INFO,
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     path = os.path.join(os.path.expanduser(source_path), "*.tif")
     all_images_paths = glob.glob(path)
     if len(all_images_paths) == 0:
@@ -107,8 +112,22 @@ def upload(
         sys.exit(1)
 
     for current_image_no, image_path in enumerate(natsorted(images_for_upload_path)):
-        print(
-            f"Processing image {current_image_no + 1} out of {no_images} : {image_path}")
+        logging.info(
+            f"Processing image {current_image_no + 1} out of {no_images} : {image_path}"
+        )
+        status = ["RUNNING", "PENDING"]
+        task_count = len(
+            [
+                task
+                for task in ee.data.listOperations()
+                if task["metadata"]["state"] in status
+            ]
+        )
+        while task_count >= 2500:
+            logging.info(
+                f"Total tasks running or submitted {task_count}: waiting for 5 minutes"
+            )
+            time.sleep(300)
         filename = __get_filename_from_path(path=image_path)
 
         destination_path = ee.data.getAsset(destination_path + "/")["name"]
@@ -116,7 +135,8 @@ def upload(
 
         if metadata and not filename in metadata:
             print(
-                f"No metadata exists for image: {filename} ==>it will not be ingested")
+                f"No metadata exists for image: {filename} ==>it will not be ingested"
+            )
             continue
 
         properties = metadata[filename] if metadata else None
@@ -201,10 +221,10 @@ def upload(
                             shell=True,
                             stdout=subprocess.PIPE,
                         )
-        except Exception as e:
-            print(e)
+        except Exception as error:
+            print(error)
             print("Upload of " + str(filename) + " has failed.")
-        except (KeyboardInterrupt, SystemExit) as e:
+        except (KeyboardInterrupt, SystemExit) as error:
             sys.exit("Program escaped by User")
 
 
@@ -213,20 +233,33 @@ def __find_remaining_assets_for_upload(path_to_local_assets, path_remote):
         path) for path in path_to_local_assets]
     if __collection_exist(path_remote):
         remote_assets = __get_asset_names_from_collection(path_remote)
-        if len(remote_assets) > 0:
-            assets_left_for_upload = set(local_assets) - set(remote_assets)
+        tasked_assets = []
+        status = ["RUNNING", "PENDING"]
+        for task in ee.data.listOperations():
+            if (
+                task["metadata"]["type"] == "INGEST_IMAGE"
+                and task["metadata"]["state"] in status
+            ):
+                tasked_assets.append(
+                    task["metadata"]["description"]
+                    .split(":")[-1]
+                    .split("/")[-1]
+                    .replace('"', "")
+                )
+        if len(remote_assets) >= 0:
+            assets_left_for_upload = set(local_assets).difference(
+                set(remote_assets), set(tasked_assets)
+            )
             if len(assets_left_for_upload) == 0:
                 print(
-                    "Collection already exists and contains all assets provided for upload. Exiting ..."
+                    f"All assets already ingested or running : {len(set(remote_assets))} assets ingested with {len(set(tasked_assets))} tasks running or submitted"
                 )
                 sys.exit(1)
+            elif len(assets_left_for_upload) > 0:
+                print(
+                    f"Total of {len(assets_left_for_upload)} assets remaining : {len(set(remote_assets))} assets with {len(set(tasked_assets))} tasks running or submitted"
+                )
 
-            print(
-                "Collection already exists. "
-                + str(len(assets_left_for_upload))
-                + " assets left for upload to "
-                + str(path_remote)
-            )
             assets_left_for_upload_full_path = [
                 path
                 for path in path_to_local_assets
@@ -239,52 +272,6 @@ def __find_remaining_assets_for_upload(path_to_local_assets, path_remote):
 
 def retry_if_ee_error(exception):
     return isinstance(exception, ee.EEException)
-
-
-@retrying.retry(
-    retry_on_exception=retry_if_ee_error,
-    wait_exponential_multiplier=1000,
-    wait_exponential_max=4000,
-    stop_max_attempt_number=3,
-)
-def __start_ingestion_task(asset_request):
-    task_id = ee.data.newTaskId(1)[0]
-    _ = ee.data.startIngestion(task_id, asset_request)
-    return task_id
-
-
-def __validate_metadata(path_for_upload, metadata_path):
-    validation_result = validate_metadata_from_csv(metadata_path)
-    keys_in_metadata = {result.keys for result in validation_result}
-    images_paths = glob.glob(os.path.join(path_for_upload, "*.tif*"))
-    keys_in_data = {__get_filename_from_path(path) for path in images_paths}
-    missing_keys = keys_in_data - keys_in_metadata
-
-    if missing_keys:
-        print(
-            str(
-                len(missing_keys)
-                + " images does not have a corresponding key in metadata"
-            )
-        )
-        print("\n".join(e for e in missing_keys))
-    else:
-        print("All images have metadata available")
-
-    if not validation_result.success:
-        print('Validation finished with errors. Type "y" to continue, default NO: ')
-        choice = input().lower()
-        if choice not in ["y", "yes"]:
-            print("Application will terminate")
-            exit(1)
-
-
-def __extract_metadata_for_image(filename, metadata):
-    if filename in metadata:
-        return metadata[filename]
-    else:
-        print("Metadata for " + str(filename) + " not found")
-        return None
 
 
 def cookie_check(cookie_list):
@@ -328,8 +315,7 @@ def __get_google_auth_session(username):
         elif cookie_check(cookie_list) is False:
             try:
                 cookie_list = raw_input(
-                    "Cookies Expired | Enter your Cookie List:  "
-                )
+                    "Cookies Expired | Enter your Cookie List:  ")
             except Exception:
                 cookie_list = input(
                     "Cookies Expired | Enter your Cookie List:  ")
@@ -347,13 +333,12 @@ def __get_google_auth_session(username):
         os.system("clear")
         subprocess.check_call(["stty", "icanon"])
     else:
-        sys.exit(f'Operating system is not supported')
+        sys.exit(f"Operating system is not supported")
     session = requests.Session()
     for cookies in cookie_list:
         session.cookies.set(cookies["name"], cookies["value"])
     response = session.get(
-        "https://code.earthengine.google.com/assets/upload/geturl"
-    )
+        "https://code.earthengine.google.com/assets/upload/geturl")
     if (
         response.status_code == 200
         and ast.literal_eval(response.text)["url"] is not None

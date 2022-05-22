@@ -1,6 +1,6 @@
 __copyright__ = """
 
-    Copyright 2021 Samapriya Roy
+    Copyright 2022 Samapriya Roy
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ __copyright__ = """
 __license__ = "Apache 2.0"
 
 import ast
-import getpass
 import json
+import logging
 import os
 import platform
 import subprocess
@@ -36,6 +36,12 @@ sys.path.append(lp)
 
 table_exists = []
 gee_table_exists = []
+
+logging.basicConfig(
+    format="%(asctime)s %(levelname)-4s %(message)s",
+    level=logging.INFO,
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 
 def cookie_check(cookie_list):
@@ -77,12 +83,9 @@ def get_auth_session(uname):
             cookie_list = cookie_list
         elif cookie_check(cookie_list) is False:
             try:
-                cookie_list = raw_input(
-                    "Cookies Expired | Enter your Cookie List:  "
-                )
+                cookie_list = raw_input("Cookies Expired | Enter your Cookie List:  ")
             except Exception:
-                cookie_list = input(
-                    "Cookies Expired | Enter your Cookie List:  ")
+                cookie_list = input("Cookies Expired | Enter your Cookie List:  ")
             finally:
                 with open("cookie_jar.json", "w") as outfile:
                     json.dump(json.loads(cookie_list), outfile)
@@ -101,9 +104,7 @@ def get_auth_session(uname):
     session = requests.Session()
     for cookies in cookie_list:
         session.cookies.set(cookies["name"], cookies["value"])
-    response = session.get(
-        "https://code.earthengine.google.com/assets/upload/geturl"
-    )
+    response = session.get("https://code.earthengine.google.com/assets/upload/geturl")
     if (
         response.status_code == 200
         and ast.literal_eval(response.text)["url"] is not None
@@ -132,7 +133,7 @@ def tabup(dirc, uname, destination, x, y):
             children = ee.data.listAssets({"parent": full_path_to_collection})
             for child in children["assets"]:
                 gee_table_exists.append(child["id"].split("/")[-1])
-    except Exception as e:
+    except Exception:
         full_path_to_collection = (
             destination.rsplit("/", 1)[0] + "/" + destination.split("/")[-1]
         )
@@ -147,8 +148,38 @@ def tabup(dirc, uname, destination, x, y):
             )
         destination_info = ee.data.getAsset(destination + "/")
         full_path_to_collection = destination_info["name"]
-    diff_set = set(table_exists) - set(gee_table_exists)
-    if len(diff_set) != 0:
+
+    tasked_assets = []
+    status = ["RUNNING", "PENDING"]
+    for task in ee.data.listOperations():
+        if (
+            task["metadata"]["type"] == "INGEST_TABLE"
+            and task["metadata"]["state"] in status
+        ):
+            tasked_assets.append(
+                task["metadata"]["description"]
+                .split(":")[-1]
+                .split("/")[-1]
+                .replace('"', "")
+            )
+    diff_set = set(table_exists).difference(set(gee_table_exists), set(tasked_assets))
+    if len(diff_set) > 0:
+        print(
+            f"Total of {len(diff_set)} assets remaining : {len(set(gee_table_exists))} assets with {len(set(tasked_assets))} tasks running or submitted"
+        )
+        status = ["RUNNING", "PENDING"]
+        task_count = len(
+            [
+                task
+                for task in ee.data.listOperations()
+                if task["metadata"]["state"] in status
+            ]
+        )
+        while task_count >= 2500:
+            logging.info(
+                f"Total tasks running or submitted {task_count}: waiting for 5 minutes"
+            )
+            time.sleep(300)
         auth_check = session.get(
             "https://code.earthengine.google.com/assets/upload/geturl"
         )
@@ -162,8 +193,7 @@ def tabup(dirc, uname, destination, x, y):
                 for i, item in enumerate(natsorted(diff_set)):
                     full_path_to_table = os.path.join(root, item + base_ext)
                     file_name = item + base_ext
-                    file_name = bytes(
-                        file_name, 'utf-8').decode('utf-8', 'ignore')
+                    file_name = bytes(file_name, "utf-8").decode("utf-8", "ignore")
                     r = session.get(
                         "https://code.earthengine.google.com/assets/upload/geturl"
                     )
@@ -182,9 +212,11 @@ def tabup(dirc, uname, destination, x, y):
                                 )
                                 gsid = resp.json()[0]
                                 asset_full_path = (
-                                    full_path_to_collection + "/" +
-                                    bytes(item, 'utf-8').decode('utf-8',
-                                                                'ignore').split(".")[0]
+                                    full_path_to_collection
+                                    + "/"
+                                    + bytes(item, "utf-8")
+                                    .decode("utf-8", "ignore")
+                                    .split(".")[0]
                                 )
                                 main_payload = {
                                     "name": asset_full_path,
@@ -208,8 +240,9 @@ def tabup(dirc, uname, destination, x, y):
                                     + '"',
                                     shell=True,
                                 )
-                                print(f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}"
-                                      )
+                                logging.info(
+                                    f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}"
+                                )
                             elif base_ext == ".csv":
                                 m = MultipartEncoder(
                                     fields={"csv_file": (file_name, f)}
@@ -221,8 +254,7 @@ def tabup(dirc, uname, destination, x, y):
                                 )
                                 gsid = resp.json()[0]
                                 asset_full_path = (
-                                    full_path_to_collection +
-                                    "/" + item.split(".")[0]
+                                    full_path_to_collection + "/" + item.split(".")[0]
                                 )
                                 if x and y is not None:
                                     main_payload = {
@@ -254,20 +286,25 @@ def tabup(dirc, uname, destination, x, y):
                                     json.dump(main_payload, outfile)
                                 manifest_file = os.path.join(lp, "data.json")
                                 output = subprocess.check_output(
-                                    f"earthengine upload table --manifest {manifest_file}", shell=True)
-                                print(
-                                    f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}")
-                        except Exception as e:
-                            print(e)
-                            print(f'Failed to ingest {asset_full_path}')
-            except Exception as e:
-                print(e)
+                                    f"earthengine upload table --manifest {manifest_file}",
+                                    shell=True,
+                                )
+                                logging.info(
+                                    f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}"
+                                )
+                        except Exception as error:
+                            print(error)
+                            print(f"Failed to ingest {asset_full_path}")
+            except Exception as error:
+                print(error)
             except (KeyboardInterrupt, SystemExit) as e:
                 sys.exit("Program escaped by User")
         else:
             print("Authentication Failed for GEE account")
     elif len(diff_set) == 0:
-        print("All assets already copied")
+        print(
+            f"All assets already ingested or running : {len(set(gee_table_exists))} assets with {len(set(tasked_assets))} tasks running or submitted"
+        )
 
 
 # authenticate(dirc=r'C:\planet_demo\grid')

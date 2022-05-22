@@ -210,7 +210,7 @@ def cookie_setup():
         os.system("clear")
         subprocess.check_call(["stty", "icanon"])
     else:
-        sys.exit('Operating system not supported')
+        sys.exit("Operating system not supported")
     print("\n" + "Cookie Setup completed")
 
 
@@ -512,7 +512,8 @@ def main(args=None):
     parser_cookie_setup.set_defaults(func=cookie_setup_from_parser)
 
     parser_upload = subparsers.add_parser(
-        "upload", help="Batch Image Uploader for uploading tif files to a GEE collection"
+        "upload",
+        help="Batch Image Uploader for uploading tif files to a GEE collection",
     )
     required_named = parser_upload.add_argument_group("Required named arguments.")
     required_named.add_argument(
@@ -543,7 +544,8 @@ def main(args=None):
     parser_upload.set_defaults(func=upload_from_parser)
 
     parser_tabup = subparsers.add_parser(
-        "tabup", help="Batch Table Uploader for uploading shapefiles/CSVs to a GEE folder"
+        "tabup",
+        help="Batch Table Uploader for uploading shapefiles/CSVs to a GEE folder",
     )
     required_named = parser_tabup.add_argument_group("Required named arguments.")
     required_named.add_argument(
