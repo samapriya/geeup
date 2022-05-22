@@ -1,11 +1,12 @@
-import sys
 import os
 import sys
+from distutils.version import StrictVersion
+
 import setuptools
+from setuptools import __version__ as setuptools_version
 from setuptools import find_packages
 from setuptools.command.test import test as TestCommand
-from distutils.version import StrictVersion
-from setuptools import __version__ as setuptools_version
+
 
 def readme():
     with open("README.md") as f:
@@ -23,6 +24,7 @@ setuptools.setup(
         "requests >= 2.10.0",
         "retrying >= 1.3.3",
         "beautifulsoup4 >= 4.9.0",
+        "natsort >= 8.1.0",
         "pandas>=0.23.0",
         "psutil>=5.4.5",
         "requests_toolbelt >= 0.7.0",
