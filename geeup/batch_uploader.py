@@ -47,20 +47,22 @@ Modifications to file:
 
 import ast
 import csv
-import getpass
 import glob
+import json
 import logging
 import os
-import sys
 import platform
+import subprocess
+import sys
 import time
-import json
-import requests
+
 import ee
 import pandas as pd
-import subprocess
+import requests
 import retrying
+from natsort import natsorted
 from requests_toolbelt import MultipartEncoder
+
 from .metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
@@ -83,8 +85,6 @@ def upload(
 
     ee.Initialize()
 
-    __verify_path_for_upload(destination_path)
-
     path = os.path.join(os.path.expanduser(source_path), "*.tif")
     all_images_paths = glob.glob(path)
     if len(all_images_paths) == 0:
@@ -106,21 +106,24 @@ def upload(
         print("No images found that match %s. Exiting...", path)
         sys.exit(1)
 
-    for current_image_no, image_path in enumerate(images_for_upload_path):
-        print(f"Processing image {current_image_no + 1} out of {no_images} : {image_path}")
+    for current_image_no, image_path in enumerate(natsorted(images_for_upload_path)):
+        print(
+            f"Processing image {current_image_no + 1} out of {no_images} : {image_path}")
         filename = __get_filename_from_path(path=image_path)
 
         destination_path = ee.data.getAsset(destination_path + "/")["name"]
         asset_full_path = destination_path + "/" + filename
 
         if metadata and not filename in metadata:
-            print(f"No metadata exists for image: {filename} ==>it will not be ingested")
+            print(
+                f"No metadata exists for image: {filename} ==>it will not be ingested")
             continue
 
         properties = metadata[filename] if metadata else None
         try:
             if user is not None:
-                gsid = __upload_file_gee(session=google_session, file_path=image_path)
+                gsid = __upload_file_gee(
+                    session=google_session, file_path=image_path)
 
             df = pd.read_csv(metadata_path)
             dd = (df.applymap(type) == str).all(0)
@@ -204,20 +207,10 @@ def upload(
         except (KeyboardInterrupt, SystemExit) as e:
             sys.exit("Program escaped by User")
 
-def __verify_path_for_upload(path):
-    folder = path[: path.rfind("/")]
-    response = ee.data.getInfo(folder)
-    if not response:
-        print(
-            str(path)
-            + " is not a valid destination. Make sure full path is provided e.g. users/user/nameofcollection "
-            "or projects/myproject/myfolder/newcollection and that you have write access there."
-        )
-        sys.exit(1)
-
 
 def __find_remaining_assets_for_upload(path_to_local_assets, path_remote):
-    local_assets = [__get_filename_from_path(path) for path in path_to_local_assets]
+    local_assets = [__get_filename_from_path(
+        path) for path in path_to_local_assets]
     if __collection_exist(path_remote):
         remote_assets = __get_asset_names_from_collection(path_remote)
         if len(remote_assets) > 0:
@@ -338,7 +331,8 @@ def __get_google_auth_session(username):
                     "Cookies Expired | Enter your Cookie List:  "
                 )
             except Exception:
-                cookie_list = input("Cookies Expired | Enter your Cookie List:  ")
+                cookie_list = input(
+                    "Cookies Expired | Enter your Cookie List:  ")
             finally:
                 with open("cookie_jar.json", "w") as outfile:
                     json.dump(json.loads(cookie_list), outfile)
@@ -447,10 +441,16 @@ def __create_image_collection(full_path_to_collection):
     if __collection_exist(full_path_to_collection):
         print("Collection " + str(full_path_to_collection) + " already exists")
     else:
-        ee.data.createAsset(
-            {"type": ee.data.ASSET_TYPE_IMAGE_COLL}, full_path_to_collection
-        )
-        print("New collection " + str(full_path_to_collection) + " created")
+        print("Collection does not exist: Creating {}".format(
+            full_path_to_collection))
+        try:
+            ee.data.createAsset(
+                {"type": ee.data.ASSET_TYPE_IMAGE_COLL_CLOUD}, full_path_to_collection
+            )
+        except Exception:
+            ee.data.createAsset(
+                {"type": ee.data.ASSET_TYPE_IMAGE_COLL}, full_path_to_collection
+            )
 
 
 def __get_asset_names_from_collection(collection_path):

@@ -17,17 +17,19 @@ __copyright__ = """
 """
 __license__ = "Apache 2.0"
 
-import requests
 import ast
-import ee
-import sys
-import json
-import platform
-from requests_toolbelt import MultipartEncoder
-import time
-import os
 import getpass
+import json
+import os
+import platform
 import subprocess
+import sys
+import time
+
+import ee
+import requests
+from natsort import natsorted
+from requests_toolbelt import MultipartEncoder
 
 lp = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lp)
@@ -79,7 +81,8 @@ def get_auth_session(uname):
                     "Cookies Expired | Enter your Cookie List:  "
                 )
             except Exception:
-                cookie_list = input("Cookies Expired | Enter your Cookie List:  ")
+                cookie_list = input(
+                    "Cookies Expired | Enter your Cookie List:  ")
             finally:
                 with open("cookie_jar.json", "w") as outfile:
                     json.dump(json.loads(cookie_list), outfile)
@@ -155,11 +158,12 @@ def tabup(dirc, uname, destination, x, y):
             == "application/json"
         ):
             try:
-                i = 1
                 file_count = len(diff_set)
-                for item in list(diff_set):
+                for i, item in enumerate(natsorted(diff_set)):
                     full_path_to_table = os.path.join(root, item + base_ext)
                     file_name = item + base_ext
+                    file_name = bytes(
+                        file_name, 'utf-8').decode('utf-8', 'ignore')
                     r = session.get(
                         "https://code.earthengine.google.com/assets/upload/geturl"
                     )
@@ -178,7 +182,9 @@ def tabup(dirc, uname, destination, x, y):
                                 )
                                 gsid = resp.json()[0]
                                 asset_full_path = (
-                                    full_path_to_collection + "/" + item.split(".")[0]
+                                    full_path_to_collection + "/" +
+                                    bytes(item, 'utf-8').decode('utf-8',
+                                                                'ignore').split(".")[0]
                                 )
                                 main_payload = {
                                     "name": asset_full_path,
@@ -202,16 +208,8 @@ def tabup(dirc, uname, destination, x, y):
                                     + '"',
                                     shell=True,
                                 )
-                                print(
-                                    "Ingesting "
-                                    + str(i)
-                                    + " of "
-                                    + str(file_count)
-                                    + " "
-                                    + str(os.path.basename(asset_full_path))
-                                    + " Task Id: "
-                                    + output.decode("ascii").strip().split(" ")[-1]
-                                )
+                                print(f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}"
+                                      )
                             elif base_ext == ".csv":
                                 m = MultipartEncoder(
                                     fields={"csv_file": (file_name, f)}
@@ -223,7 +221,8 @@ def tabup(dirc, uname, destination, x, y):
                                 )
                                 gsid = resp.json()[0]
                                 asset_full_path = (
-                                    full_path_to_collection + "/" + item.split(".")[0]
+                                    full_path_to_collection +
+                                    "/" + item.split(".")[0]
                                 )
                                 if x and y is not None:
                                     main_payload = {
@@ -254,11 +253,13 @@ def tabup(dirc, uname, destination, x, y):
                                 ) as outfile:
                                     json.dump(main_payload, outfile)
                                 manifest_file = os.path.join(lp, "data.json")
-                                output = subprocess.check_output(f"earthengine upload table --manifest {manifest_file}",shell=True)
-                                print(f"Ingesting {i} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}")
+                                output = subprocess.check_output(
+                                    f"earthengine upload table --manifest {manifest_file}", shell=True)
+                                print(
+                                    f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}")
                         except Exception as e:
                             print(e)
-                        i = i + 1
+                            print(f'Failed to ingest {asset_full_path}')
             except Exception as e:
                 print(e)
             except (KeyboardInterrupt, SystemExit) as e:
