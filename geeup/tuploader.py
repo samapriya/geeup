@@ -28,6 +28,8 @@ import time
 
 import ee
 import requests
+from cerberus import Validator
+from cerberus.errors import BasicErrorHandler
 from natsort import natsorted
 from requests_toolbelt import MultipartEncoder
 
@@ -42,6 +44,15 @@ logging.basicConfig(
     level=logging.INFO,
     datefmt="%Y-%m-%d %H:%M:%S",
 )
+
+
+class CustomErrorHandler(BasicErrorHandler):
+    def __init__(self, schema):
+        self.custom_defined_schema = schema
+
+    def _format_message(self, field, error):
+        print("")
+        return "GEE file name & path cannot have spaces & can only have letters, numbers, hiphens and underscores"
 
 
 def cookie_check(cookie_list):
@@ -83,9 +94,11 @@ def get_auth_session(uname):
             cookie_list = cookie_list
         elif cookie_check(cookie_list) is False:
             try:
-                cookie_list = raw_input("Cookies Expired | Enter your Cookie List:  ")
+                cookie_list = raw_input(
+                    "Cookies Expired | Enter your Cookie List:  ")
             except Exception:
-                cookie_list = input("Cookies Expired | Enter your Cookie List:  ")
+                cookie_list = input(
+                    "Cookies Expired | Enter your Cookie List:  ")
             finally:
                 with open("cookie_jar.json", "w") as outfile:
                     json.dump(json.loads(cookie_list), outfile)
@@ -104,7 +117,8 @@ def get_auth_session(uname):
     session = requests.Session()
     for cookies in cookie_list:
         session.cookies.set(cookies["name"], cookies["value"])
-    response = session.get("https://code.earthengine.google.com/assets/upload/geturl")
+    response = session.get(
+        "https://code.earthengine.google.com/assets/upload/geturl")
     if (
         response.status_code == 200
         and ast.literal_eval(response.text)["url"] is not None
@@ -116,6 +130,13 @@ def get_auth_session(uname):
 
 def tabup(dirc, uname, destination, x, y):
     ee.Initialize()
+    schema = {"folder_path": {
+        "type": "string", "regex": "^[a-zA-Z0-9/_-]+$"}}
+    folder_validate = {"folder_path": destination}
+    v = Validator(schema, error_handler=CustomErrorHandler(schema))
+    if v.validate(folder_validate, schema) is False:
+        sys.exit(v.errors)
+
     session = get_auth_session(uname)
     for (root, directories, files) in os.walk(dirc):
         for filename in files:
@@ -162,7 +183,8 @@ def tabup(dirc, uname, destination, x, y):
                 .split("/")[-1]
                 .replace('"', "")
             )
-    diff_set = set(table_exists).difference(set(gee_table_exists), set(tasked_assets))
+    diff_set = set(table_exists).difference(
+        set(gee_table_exists), set(tasked_assets))
     if len(diff_set) > 0:
         print(
             f"Total of {len(diff_set)} assets remaining : {len(set(gee_table_exists))} assets with {len(set(tasked_assets))} tasks running or submitted"
@@ -193,7 +215,8 @@ def tabup(dirc, uname, destination, x, y):
                 for i, item in enumerate(natsorted(diff_set)):
                     full_path_to_table = os.path.join(root, item + base_ext)
                     file_name = item + base_ext
-                    file_name = bytes(file_name, "utf-8").decode("utf-8", "ignore")
+                    file_name = bytes(
+                        file_name, "utf-8").decode("utf-8", "ignore")
                     r = session.get(
                         "https://code.earthengine.google.com/assets/upload/geturl"
                     )
@@ -229,6 +252,19 @@ def tabup(dirc, uname, destination, x, y):
                                         }
                                     ],
                                 }
+                                schema = {
+                                    "asset_path": {
+                                        "type": "string",
+                                        "regex": "^[a-zA-Z0-9/_-]+$",
+                                    }
+                                }
+                                asset_validate = {
+                                    "asset_path": asset_full_path}
+                                v = Validator(
+                                    schema, error_handler=CustomErrorHandler(schema))
+                                if v.validate(asset_validate, schema) is False:
+                                    print(v.errors)
+                                    raise Exception
                                 with open(
                                     os.path.join(lp, "data.json"), "w"
                                 ) as outfile:
@@ -254,7 +290,8 @@ def tabup(dirc, uname, destination, x, y):
                                 )
                                 gsid = resp.json()[0]
                                 asset_full_path = (
-                                    full_path_to_collection + "/" + item.split(".")[0]
+                                    full_path_to_collection +
+                                    "/" + item.split(".")[0]
                                 )
                                 if x and y is not None:
                                     main_payload = {
@@ -280,6 +317,19 @@ def tabup(dirc, uname, destination, x, y):
                                             }
                                         ],
                                     }
+                                schema = {
+                                    "asset_path": {
+                                        "type": "string",
+                                        "regex": "^[a-zA-Z0-9/_-]+$",
+                                    }
+                                }
+                                asset_validate = {
+                                    "asset_path": asset_full_path}
+                                v = Validator(
+                                    schema, error_handler=CustomErrorHandler(schema))
+                                if v.validate(asset_validate, schema) is False:
+                                    print(v.errors)
+                                    raise Exception
                                 with open(
                                     os.path.join(lp, "data.json"), "w"
                                 ) as outfile:

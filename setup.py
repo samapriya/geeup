@@ -27,6 +27,7 @@ setuptools.setup(
         "natsort >= 8.1.0",
         "pandas>=0.23.0",
         "psutil>=5.4.5",
+        "cerberus>=1.3.4",
         "requests_toolbelt >= 0.7.0",
         "pytest >= 3.0.0",
         "google-cloud-storage >= 1.1.1",

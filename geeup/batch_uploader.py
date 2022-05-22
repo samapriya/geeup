@@ -60,6 +60,8 @@ import ee
 import pandas as pd
 import requests
 import retrying
+from cerberus import Validator
+from cerberus.errors import BasicErrorHandler
 from natsort import natsorted
 from requests_toolbelt import MultipartEncoder
 
@@ -73,6 +75,15 @@ sys.path.append(lp)
 slist = []
 
 
+class CustomErrorHandler(BasicErrorHandler):
+    def __init__(self, schema):
+        self.custom_defined_schema = schema
+
+    def _format_message(self, field, error):
+        print("")
+        return "GEE file name & path cannot have spaces & can only have letters, numbers, hiphens and underscores"
+
+
 def upload(
     user,
     source_path,
@@ -82,6 +93,11 @@ def upload(
     nodata_value=None,
     bucket_name=None,
 ):
+    schema = {"collection_path": {"type": "string", "regex": "^[a-zA-Z0-9/_-]+$"}}
+    collection_validate = {"collection_path": destination_path}
+    v = Validator(schema, error_handler=CustomErrorHandler(schema))
+    if v.validate(collection_validate, schema) is False:
+        sys.exit(v.errors)
 
     ee.Initialize()
 
@@ -142,8 +158,7 @@ def upload(
         properties = metadata[filename] if metadata else None
         try:
             if user is not None:
-                gsid = __upload_file_gee(
-                    session=google_session, file_path=image_path)
+                gsid = __upload_file_gee(session=google_session, file_path=image_path)
 
             df = pd.read_csv(metadata_path)
             dd = (df.applymap(type) == str).all(0)
@@ -211,6 +226,17 @@ def upload(
                         if nodata_value is None:
                             main_payload.pop("missing_data")
                         # print(json.dumps(main_payload))
+                        schema = {
+                            "asset_path": {
+                                "type": "string",
+                                "regex": "^[a-zA-Z0-9/_-]+$",
+                            }
+                        }
+                        asset_validate = {"asset_path": asset_full_path}
+                        v = Validator(schema, error_handler=CustomErrorHandler(schema))
+                        if v.validate(asset_validate, schema) is False:
+                            print(v.errors)
+                            raise Exception
                         with open(os.path.join(lp, "data.json"), "w") as outfile:
                             json.dump(main_payload, outfile)
                         subprocess.call(
@@ -229,8 +255,7 @@ def upload(
 
 
 def __find_remaining_assets_for_upload(path_to_local_assets, path_remote):
-    local_assets = [__get_filename_from_path(
-        path) for path in path_to_local_assets]
+    local_assets = [__get_filename_from_path(path) for path in path_to_local_assets]
     if __collection_exist(path_remote):
         remote_assets = __get_asset_names_from_collection(path_remote)
         tasked_assets = []
@@ -314,11 +339,9 @@ def __get_google_auth_session(username):
             cookie_list = cookie_list
         elif cookie_check(cookie_list) is False:
             try:
-                cookie_list = raw_input(
-                    "Cookies Expired | Enter your Cookie List:  ")
+                cookie_list = raw_input("Cookies Expired | Enter your Cookie List:  ")
             except Exception:
-                cookie_list = input(
-                    "Cookies Expired | Enter your Cookie List:  ")
+                cookie_list = input("Cookies Expired | Enter your Cookie List:  ")
             finally:
                 with open("cookie_jar.json", "w") as outfile:
                     json.dump(json.loads(cookie_list), outfile)
@@ -337,8 +360,7 @@ def __get_google_auth_session(username):
     session = requests.Session()
     for cookies in cookie_list:
         session.cookies.set(cookies["name"], cookies["value"])
-    response = session.get(
-        "https://code.earthengine.google.com/assets/upload/geturl")
+    response = session.get("https://code.earthengine.google.com/assets/upload/geturl")
     if (
         response.status_code == 200
         and ast.literal_eval(response.text)["url"] is not None
@@ -426,8 +448,7 @@ def __create_image_collection(full_path_to_collection):
     if __collection_exist(full_path_to_collection):
         print("Collection " + str(full_path_to_collection) + " already exists")
     else:
-        print("Collection does not exist: Creating {}".format(
-            full_path_to_collection))
+        print("Collection does not exist: Creating {}".format(full_path_to_collection))
         try:
             ee.data.createAsset(
                 {"type": ee.data.ASSET_TYPE_IMAGE_COLL_CLOUD}, full_path_to_collection
