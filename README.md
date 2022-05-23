@@ -2,7 +2,7 @@
 
 [![Twitter URL](https://img.shields.io/twitter/follow/samapriyaroy?style=social)](https://twitter.com/intent/follow?screen_name=samapriyaroy)
 [![Hits-of-Code](https://hitsofcode.com/github/samapriya/geeup?branch=master)](https://hitsofcode.com/github/samapriya/geeup?branch=master)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5814026.svg)](https://doi.org/10.5281/zenodo.5814026)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6571151.svg)](https://doi.org/10.5281/zenodo.6571151)
 [![PyPI version](https://badge.fury.io/py/geeup.svg)](https://badge.fury.io/py/geeup)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/geeup)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -13,8 +13,8 @@ This tool came of the simple need to handle batch uploads of both image assets t
 -If you find this tool useful, star and cite it as below
 
 ```
-Samapriya Roy. (2022). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (0.5.3).
-Zenodo. https://doi.org/10.5281/zenodo.5814026
+Samapriya Roy. (2022). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (0.5.4).
+Zenodo. https://doi.org/10.5281/zenodo.6571151
 ```
 
 ## ReadMe Page: [https://samapriya.github.io/geeup/](https://samapriya.github.io/geeup/)
