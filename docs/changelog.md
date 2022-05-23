@@ -1,5 +1,15 @@
 # Changelog
 
+### 0.5.4
+- Major version improvements to performance and codebase
+- Added rename tool to allow file renaming to EE rules
+- Added natural sorting to sort filenames to be ingested
+- Added capability for image and table upload to check for both existing assets and assets in task queue before retrying
+- Added task check capability to avoid 3000 tasks in queue
+- Updated and optimized failure checks and logging
+- Added path and asset schema check for EE rulesets
+- Updated docs and readme
+
 ### 0.5.3
 - Major version removed selenium support as stable method
 - Overall improvements to performance and codebase

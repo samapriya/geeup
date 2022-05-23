@@ -81,7 +81,7 @@ class CustomErrorHandler(BasicErrorHandler):
 
     def _format_message(self, field, error):
         print("")
-        return "GEE file name & path cannot have spaces & can only have letters, numbers, hiphens and underscores"
+        return "GEE file name & path cannot have spaces & can only have letters, numbers, hyphens and underscores"
 
 
 def upload(
@@ -93,7 +93,8 @@ def upload(
     nodata_value=None,
     bucket_name=None,
 ):
-    schema = {"collection_path": {"type": "string", "regex": "^[a-zA-Z0-9/_-]+$"}}
+    schema = {"collection_path": {
+        "type": "string", "regex": "^[a-zA-Z0-9/_-]+$"}}
     collection_validate = {"collection_path": destination_path}
     v = Validator(schema, error_handler=CustomErrorHandler(schema))
     if v.validate(collection_validate, schema) is False:
@@ -158,7 +159,8 @@ def upload(
         properties = metadata[filename] if metadata else None
         try:
             if user is not None:
-                gsid = __upload_file_gee(session=google_session, file_path=image_path)
+                gsid = __upload_file_gee(
+                    session=google_session, file_path=image_path)
 
             df = pd.read_csv(metadata_path)
             dd = (df.applymap(type) == str).all(0)
@@ -233,7 +235,8 @@ def upload(
                             }
                         }
                         asset_validate = {"asset_path": asset_full_path}
-                        v = Validator(schema, error_handler=CustomErrorHandler(schema))
+                        v = Validator(
+                            schema, error_handler=CustomErrorHandler(schema))
                         if v.validate(asset_validate, schema) is False:
                             print(v.errors)
                             raise Exception
@@ -255,7 +258,8 @@ def upload(
 
 
 def __find_remaining_assets_for_upload(path_to_local_assets, path_remote):
-    local_assets = [__get_filename_from_path(path) for path in path_to_local_assets]
+    local_assets = [__get_filename_from_path(
+        path) for path in path_to_local_assets]
     if __collection_exist(path_remote):
         remote_assets = __get_asset_names_from_collection(path_remote)
         tasked_assets = []
@@ -339,9 +343,11 @@ def __get_google_auth_session(username):
             cookie_list = cookie_list
         elif cookie_check(cookie_list) is False:
             try:
-                cookie_list = raw_input("Cookies Expired | Enter your Cookie List:  ")
+                cookie_list = raw_input(
+                    "Cookies Expired | Enter your Cookie List:  ")
             except Exception:
-                cookie_list = input("Cookies Expired | Enter your Cookie List:  ")
+                cookie_list = input(
+                    "Cookies Expired | Enter your Cookie List:  ")
             finally:
                 with open("cookie_jar.json", "w") as outfile:
                     json.dump(json.loads(cookie_list), outfile)
@@ -360,7 +366,8 @@ def __get_google_auth_session(username):
     session = requests.Session()
     for cookies in cookie_list:
         session.cookies.set(cookies["name"], cookies["value"])
-    response = session.get("https://code.earthengine.google.com/assets/upload/geturl")
+    response = session.get(
+        "https://code.earthengine.google.com/assets/upload/geturl")
     if (
         response.status_code == 200
         and ast.literal_eval(response.text)["url"] is not None
@@ -448,7 +455,8 @@ def __create_image_collection(full_path_to_collection):
     if __collection_exist(full_path_to_collection):
         print("Collection " + str(full_path_to_collection) + " already exists")
     else:
-        print("Collection does not exist: Creating {}".format(full_path_to_collection))
+        print("Collection does not exist: Creating {}".format(
+            full_path_to_collection))
         try:
             ee.data.createAsset(
                 {"type": ee.data.ASSET_TYPE_IMAGE_COLL_CLOUD}, full_path_to_collection

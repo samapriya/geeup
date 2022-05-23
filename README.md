@@ -1,8 +1,7 @@
 # geeup: Simple CLI for Earth Engine Uploads
 
 [![Twitter URL](https://img.shields.io/twitter/follow/samapriyaroy?style=social)](https://twitter.com/intent/follow?screen_name=samapriyaroy)
-![](https://tokei.rs/b1/github/samapriya/geeup?category=code)
-![](https://tokei.rs/b1/github/samapriya/geeup?category=files)
+[![Hits-of-Code](https://hitsofcode.com/github/samapriya/geeup?branch=master)](https://hitsofcode.com/github/samapriya/geeup?branch=master)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5814026.svg)](https://doi.org/10.5281/zenodo.5814026)
 [![PyPI version](https://badge.fury.io/py/geeup.svg)](https://badge.fury.io/py/geeup)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/geeup)
@@ -27,6 +26,7 @@ Zenodo. https://doi.org/10.5281/zenodo.5814026
 * [Getting started](#getting-started)
 * [geeup Simple CLI for Earth Engine Uploads](#geeup-simple-cli-for-earth-engine-uploads)
     * [geeup Quota](#geeup-quota)
+    * [geeup Rename](#geeup-rename)
     * [geeup Zipshape](#geeup-zipshape)
     * [geeup getmeta](#geeup-getmeta)
     * [Cookie Setup](#cookie-setup)
@@ -133,6 +133,26 @@ optional arguments:
 Optional named arguments:
   --project PROJECT  Project Name usually in format projects/project-
                      name/assets/
+
+```
+
+### geeup Rename
+
+This tool is simply designed to rename filenames to confirm to GEE rules about path renaming including allowing for only hypens or underscores and letters and numbers with no spaces. The tool does do in replace replacement which means it will not create a copy but rename to the same location they are in so use with caution
+
+![geeup_rename](https://user-images.githubusercontent.com/6677629/169738141-b032f14b-7b26-441a-96bd-a4eadeaeba7a.gif)
+
+```
+geeup rename -h
+
+usage: geeup rename [-h] --input INPUT
+
+optional arguments:
+  -h, --help     show this help message and exit
+
+Required named arguments.:
+  --input INPUT  Path to the input directory with all files to be
+                 uploaded
 
 ```
 
@@ -264,13 +284,18 @@ geeup tabup --source "full path to folder with Zipped Shapefiles/CSV files" --de
 ```
 
 ### geeup tasks
-This script counts all currently running, ready, completed, failed and canceled tasks along with failed tasks. This tool is linked to your google earth engine account with which you initialized the earth engine client. This takes no argument.
+This tasks tool gives a direct read out of different Earth Engine tasks across different states currently running, cancelled, pending and failed tasks and requires no arguments. However you could pass the state and get stats like SUCCEEDED along with item description or path, number of attempts and time taken along with task ID as a JSON list. This could also simply be piped into a JSON file using ">"
+
+![geeup_tasks_enhanced](https://user-images.githubusercontent.com/6677629/169737348-abf13334-e360-487e-b4ce-d25aa677404c.gif)
 
 ```
-usage: geeup tasks [-h]
+usage: geeup tasks [-h] [--state STATE]
 
 optional arguments:
-  -h, --help  show this help message and exit
+  -h, --help     show this help message and exit
+
+Optional named arguments:
+  --state STATE  Query by state type SUCCEEDED|PENDING|RUNNING|FAILED
 ```
 
 ### geeup delete
@@ -287,6 +312,16 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 # Changelog
+
+### 0.5.4
+- Major version improvements to performance and codebase
+- Added rename tool to allow file renaming to EE rules
+- Added natural sorting to sort filenames to be ingested
+- Added capability for image and table upload to check for both existing assets and assets in task queue before retrying
+- Added task check capability to avoid 3000 tasks in queue
+- Updated and optimized failure checks and logging
+- Added path and asset schema check for EE rulesets
+- Updated docs and readme
 
 ### 0.5.3
 - Major version removed selenium support as stable method

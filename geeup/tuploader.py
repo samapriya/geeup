@@ -52,7 +52,7 @@ class CustomErrorHandler(BasicErrorHandler):
 
     def _format_message(self, field, error):
         print("")
-        return "GEE file name & path cannot have spaces & can only have letters, numbers, hiphens and underscores"
+        return "GEE file name & path cannot have spaces & can only have letters, numbers, hyphens and underscores"
 
 
 def cookie_check(cookie_list):

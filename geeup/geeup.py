@@ -1,3 +1,8 @@
+from .batch_uploader import upload
+from .getmeta import getmeta
+from .tuploader import tabup
+from .zipfiles import zipshape
+
 __copyright__ = """
 
     Copyright 2021 Samapriya Roy
@@ -17,21 +22,24 @@ __copyright__ = """
 """
 __license__ = "Apache 2.0"
 
+import argparse
+import json
+import os
+import platform
+import re
+import subprocess
+import sys
+import time
+import webbrowser
+from datetime import datetime
+from os.path import expanduser
+
+import ee
 #! /usr/bin/env python
 import pkg_resources
 import requests
-import argparse
-import os
-import ee
-import json
-import sys
-import platform
-import subprocess
-import webbrowser
-import time
-from logzero import logger
 from bs4 import BeautifulSoup
-from os.path import expanduser
+from logzero import logger
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -105,10 +113,6 @@ if str(platform.system().lower()) == "windows":
         subprocess.call("pipwin install geopandas", shell=True)
     except Exception as e:
         logger.exception(e)
-from .batch_uploader import upload
-from .tuploader import tabup
-from .zipfiles import zipshape
-from .getmeta import getmeta
 
 lpath = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lpath)
@@ -131,6 +135,8 @@ class Solution:
 ob1 = Solution()
 
 # Get package version
+
+
 def geeup_version():
     url = "https://pypi.org/project/geeup/"
     source = requests.get(url)
@@ -174,6 +180,8 @@ def geeup_version():
 geeup_version()
 
 # Go to the readMe
+
+
 def readme():
     try:
         a = webbrowser.open("https://samapriya.github.io/geeup/", new=2)
@@ -244,7 +252,8 @@ def quota(project):
                 print(
                     "Used {} of {}".format(
                         humansize(int(project_detail["quota"]["sizeBytes"])),
-                        (humansize(int(project_detail["quota"]["maxSizeBytes"]))),
+                        (humansize(
+                            int(project_detail["quota"]["maxSizeBytes"]))),
                     )
                 )
             else:
@@ -274,7 +283,8 @@ def quota(project):
             print("")
             print(
                 "Root assets path: {}".format(
-                    roots["id"].replace("projects/earthengine-legacy/assets/", "")
+                    roots["id"].replace(
+                        "projects/earthengine-legacy/assets/", "")
                 )
             )
             print(
@@ -338,21 +348,63 @@ def tabup_from_parser(args):
     )
 
 
-def tasks():
+def rename(directory):
+    file_list = [file for file in os.listdir(directory)]
+    for i, file_original in enumerate(file_list):
+        file_name, file_extension = os.path.splitext(file_original)
+        string = re.sub(r'[^a-zA-Z0-9 _-]', r'', file_name)
+        string = re.sub(r"\s+", "_", string)
+        if file_original != string:
+            print(f'Renaming {file_original} to {string}{file_extension}')
+            os.rename(os.path.join(directory, file_original),
+                      os.path.join(directory, f'{string}{file_extension}'))
+
+
+def rename_from_parser(args):
+    rename(directory=args.input)
+
+
+def tasks(state):
     ee.Initialize()
-    statuses = ee.data.listOperations()
-    st = []
-    for status in statuses:
-        st.append(status["metadata"]["state"])
-    print(f"Tasks Running: {st.count('RUNNING')}")
-    print(f"Tasks Pending: {st.count('PENDING')}")
-    print(f"Tasks Completed: {st.count('SUCCEEDED')}")
-    print(f"Tasks Failed: {st.count('FAILED')}")
-    print(f"Tasks Cancelled: {st.count('CANCELLED') + st.count('CANCELLING')}")
+    if state is not None:
+        task_bundle = []
+        operations = [status
+                      for status in ee.data.listOperations() if status["metadata"]["state"] == state]
+        for operation in operations:
+            task_id = operation['name'].split('/')[-1]
+            description = operation['metadata']['description'].split(
+                ':')[-1].strip().replace('"', '')
+            op_type = operation['metadata']['type']
+            attempt_count = str(operation['metadata']['attempt'])
+            start = datetime.strptime(
+                operation['metadata']["startTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
+            end = datetime.strptime(
+                operation['metadata']["endTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
+            time_difference = end-start
+            item = {
+                "task_id": task_id,
+                "operation_type": op_type,
+                "description/path": description,
+                "time_difference": str(time_difference),
+                "attempt": attempt_count
+            }
+            task_bundle.append(item)
+        print(json.dumps(task_bundle, indent=2))
+    else:
+        statuses = ee.data.listOperations()
+        st = []
+        for status in statuses:
+            st.append(status["metadata"]["state"])
+        print(f"Tasks Running: {st.count('RUNNING')}")
+        print(f"Tasks Pending: {st.count('PENDING')}")
+        print(f"Tasks Completed: {st.count('SUCCEEDED')}")
+        print(f"Tasks Failed: {st.count('FAILED')}")
+        print(
+            f"Tasks Cancelled: {st.count('CANCELLED') + st.count('CANCELLING')}")
 
 
 def tasks_from_parser(args):
-    tasks()
+    tasks(state=args.state)
 
 
 def cancel_tasks(tasks):
@@ -370,7 +422,8 @@ def cancel_tasks(tasks):
                 for task in all_tasks:
                     ee.data.cancelOperation(task["name"])
                 print(
-                    "Request completed task ID or task type {} cancelled".format(tasks)
+                    "Request completed task ID or task type {} cancelled".format(
+                        tasks)
                 )
             elif len(all_tasks) == 0:
                 print("No Running or Pending tasks found")
@@ -388,7 +441,8 @@ def cancel_tasks(tasks):
                 for task in running_tasks:
                     ee.data.cancelOperation(task["name"])
                 print(
-                    "Request completed task ID or task type: {} cancelled".format(tasks)
+                    "Request completed task ID or task type: {} cancelled".format(
+                        tasks)
                 )
             elif len(running_tasks) == 0:
                 print("No Running tasks found")
@@ -406,7 +460,8 @@ def cancel_tasks(tasks):
                 for task in ready_tasks:
                     ee.data.cancelOperation(task["name"])
                 print(
-                    "Request completed task ID or task type: {} cancelled".format(tasks)
+                    "Request completed task ID or task type: {} cancelled".format(
+                        tasks)
                 )
             elif len(ready_tasks) == 0:
                 print("No Pending tasks found")
@@ -424,10 +479,12 @@ def cancel_tasks(tasks):
             ):
                 ee.data.cancelTask(task["id"])
                 print(
-                    "Request completed task ID or task type: {} cancelled".format(tasks)
+                    "Request completed task ID or task type: {} cancelled".format(
+                        tasks)
                 )
             else:
-                print("Task in status {}".format(get_status["metadata"]["state"]))
+                print("Task in status {}".format(
+                    get_status["metadata"]["state"]))
         except Exception as e:
             print("No task found with given task ID {}".format(tasks))
 
@@ -466,7 +523,8 @@ def main(args=None):
     parser_quota = subparsers.add_parser(
         "quota", help="Print Earth Engine storage and asset count quota"
     )
-    optional_named = parser_quota.add_argument_group("Optional named arguments")
+    optional_named = parser_quota.add_argument_group(
+        "Optional named arguments")
     optional_named.add_argument(
         "--project",
         help="Project Name usually in format projects/project-name/assets/",
@@ -474,11 +532,25 @@ def main(args=None):
     )
     parser_quota.set_defaults(func=quota_from_parser)
 
+    parser_rename = subparsers.add_parser(
+        "rename",
+        help="Renames filename to adhere to EE naming rules: Caution this is in place renaming",
+    )
+    required_named = parser_rename.add_argument_group(
+        "Required named arguments.")
+    required_named.add_argument(
+        "--input",
+        help="Path to the input directory with all files to be uploaded",
+        required=True,
+    )
+    parser_rename.set_defaults(func=rename_from_parser)
+
     parser_zipshape = subparsers.add_parser(
         "zipshape",
         help="Zips all shapefiles and subsidary files in folder into individual zip files",
     )
-    required_named = parser_zipshape.add_argument_group("Required named arguments.")
+    required_named = parser_zipshape.add_argument_group(
+        "Required named arguments.")
     required_named.add_argument(
         "--input",
         help="Path to the input directory with all shape files",
@@ -494,7 +566,8 @@ def main(args=None):
     parser_getmeta = subparsers.add_parser(
         "getmeta", help="Creates a generalized metadata for rasters in folder"
     )
-    required_named = parser_getmeta.add_argument_group("Required named arguments.")
+    required_named = parser_getmeta.add_argument_group(
+        "Required named arguments.")
     required_named.add_argument(
         "--input",
         help="Path to the input directory with all raster files",
@@ -515,7 +588,8 @@ def main(args=None):
         "upload",
         help="Batch Image Uploader for uploading tif files to a GEE collection",
     )
-    required_named = parser_upload.add_argument_group("Required named arguments.")
+    required_named = parser_upload.add_argument_group(
+        "Required named arguments.")
     required_named.add_argument(
         "--source", help="Path to the directory with images for upload.", required=True
     )
@@ -527,7 +601,8 @@ def main(args=None):
     required_named.add_argument(
         "-m", "--metadata", help="Path to CSV with metadata.", required=True
     )
-    optional_named = parser_upload.add_argument_group("Optional named arguments")
+    optional_named = parser_upload.add_argument_group(
+        "Optional named arguments")
     optional_named.add_argument(
         "--nodata",
         type=int,
@@ -547,7 +622,8 @@ def main(args=None):
         "tabup",
         help="Batch Table Uploader for uploading shapefiles/CSVs to a GEE folder",
     )
-    required_named = parser_tabup.add_argument_group("Required named arguments.")
+    required_named = parser_tabup.add_argument_group(
+        "Required named arguments.")
     required_named.add_argument(
         "--source",
         help="Path to the directory with zipped files or CSV files for upload.",
@@ -561,7 +637,8 @@ def main(args=None):
     required_named.add_argument(
         "-u", "--user", help="Google account name (gmail address)."
     )
-    optional_named = parser_tabup.add_argument_group("Optional named arguments")
+    optional_named = parser_tabup.add_argument_group(
+        "Optional named arguments")
     optional_named.add_argument(
         "--x",
         help="Column with longitude value",
@@ -576,12 +653,19 @@ def main(args=None):
         "tasks",
         help="Queries current task status [completed,running,ready,failed,cancelled]",
     )
+    optional_named = parser_tasks.add_argument_group(
+        "Optional named arguments")
+    optional_named.add_argument(
+        "--state",
+        help="Query by state type SUCCEEDED|PENDING|RUNNING|FAILED",
+    )
     parser_tasks.set_defaults(func=tasks_from_parser)
 
     parser_cancel = subparsers.add_parser(
         "cancel", help="Cancel all, running or ready tasks or task ID"
     )
-    required_named = parser_cancel.add_argument_group("Required named arguments.")
+    required_named = parser_cancel.add_argument_group(
+        "Required named arguments.")
     required_named.add_argument(
         "--tasks",
         help="You can provide tasks as running or pending or all or even a single task id",

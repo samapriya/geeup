@@ -8,7 +8,7 @@ repo_name: geeup
 repo_url: https://github.com/samapriya/geeup
 
 # Copyright
-copyright: 'Copyright &copy; 2021 - 2022 Samapriya Roy'
+copyright: 'Copyright &copy; 2022 - 2023 Samapriya Roy'
 
 
 # Configuration
@@ -101,6 +101,7 @@ nav:
     - Quota tool: projects/quota.md
   - Upload tools:
     - Get Metadata: projects/get_metadata.md
+    - geeup Rename: projects/rename.md
     - Zip Shapefiles: projects/zipshape.md
     - Image Upload: projects/image_upload.md
     - Table Upload: projects/table_upload.md

@@ -15,7 +15,7 @@ def readme():
 
 setuptools.setup(
     name="geeup",
-    version="0.5.3",
+    version="0.5.4",
     packages=find_packages(),
     url="https://github.com/samapriya/geeup",
     install_requires=[
@@ -61,6 +61,6 @@ setuptools.setup(
     ],
     author="Samapriya Roy",
     author_email="samapriya.roy@gmail.com",
-    description="Simple Client for Earth Engine Uploads with Selenium Support",
+    description="Simple Client for Earth Engine Uploads",
     entry_points={"console_scripts": ["geeup=geeup.geeup:main"]},
 )
