@@ -187,7 +187,7 @@ def tabup(dirc, uname, destination, x, y):
         set(gee_table_exists), set(tasked_assets))
     if len(diff_set) > 0:
         print(
-            f"Total of {len(diff_set)} assets remaining : {len(set(gee_table_exists))} assets with {len(set(tasked_assets))} tasks running or submitted"
+            f"Total of {len(diff_set)} assets remaining : {len(set(gee_table_exists))} assets with {len(set(tasked_assets))} associated tasks running or submitted"
         )
         status = ["RUNNING", "PENDING"]
         task_count = len(

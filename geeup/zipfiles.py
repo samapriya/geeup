@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import os
-from logzero import logger
 from zipfile import ZipFile
+
+from logzero import logger
 
 overall = []
 
@@ -25,6 +26,8 @@ def zipshape(directory, export):
                             filepath = os.path.join(root, filebase + things)
                             # print(filepath)
                             file_paths.append(filepath)
+                    if not os.path.exists(export):
+                        os.makedirs(export)
                     os.chdir(export)
                     if not os.path.exists(filebase + ".zip") and int(
                         len(file_paths)

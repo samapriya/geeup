@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.5.5
+- Made sure table and image upload use the term associated tasks
+- geeup tasks now uses updateTime to prevent key error for RUNNING tasks
+- zipshape tool can now create the export directory if it does not exist
+
 ### 0.5.4
 - Major version improvements to performance and codebase
 - Added rename tool to allow file renaming to EE rules

@@ -379,7 +379,7 @@ def tasks(state):
             start = datetime.strptime(
                 operation['metadata']["startTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
             end = datetime.strptime(
-                operation['metadata']["endTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
+                operation['metadata']["updateTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
             time_difference = end-start
             item = {
                 "task_id": task_id,
