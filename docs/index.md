@@ -16,9 +16,9 @@ This tool came of the simple need to handle batch uploads of both image assets t
 ![geeup_main](https://user-images.githubusercontent.com/6677629/147896906-5b421ba5-de0d-47de-bb88-e4a0edce6528.png)
 
 
-If you use this tool to download data for your research, and find this tool useful, star and cite it as below
+If you find this tool useful, star and cite it as below to show your suppport
 
 ```
-Samapriya Roy. (2022). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (0.5.3).
-Zenodo. https://doi.org/10.5281/zenodo.5814026
+Samapriya Roy. (2022). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (0.5.4).
+Zenodo. https://doi.org/10.5281/zenodo.6571151
 ```
