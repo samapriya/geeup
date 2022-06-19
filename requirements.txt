@@ -2,6 +2,7 @@ earthengine_api>=0.1.274
 logzero>=1.5.0
 requests >= 2.22.0
 cerberus>=1.3.4
+geotiff>0.2.4
 retrying >= 1.3.3
 natsort >= 8.1.0
 beautifulsoup4 >= 4.9.0
