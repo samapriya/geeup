@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.5.6
+- Removed dependency on GDAL
+
 ### 0.5.5
 - Made sure table and image upload use the term associated tasks
 - geeup tasks now uses updateTime to prevent key error for RUNNING tasks

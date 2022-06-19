@@ -16,7 +16,7 @@ This tool came of the simple need to handle batch uploads of both image assets t
 ![geeup_main](https://user-images.githubusercontent.com/6677629/147896906-5b421ba5-de0d-47de-bb88-e4a0edce6528.png)
 
 
-If you find this tool useful, star and cite it as below to show your suppport
+If you find this tool useful, star and cite it as below to show your support
 
 ```
 Samapriya Roy. (2022). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (0.5.4).
