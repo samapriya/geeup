@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.5.7
+- Getmeta tool now generates crs and bounding box
+
 ### 0.5.6
 - Removed dependency on GDAL
 
