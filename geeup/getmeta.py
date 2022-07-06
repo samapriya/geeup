@@ -13,7 +13,7 @@ def getmeta(indir, mfile):
     with open(mfile, "w") as csvfile:
         writer = csv.DictWriter(
             csvfile,
-            fieldnames=["id_no", "xsize", "ysize", "num_bands"],
+            fieldnames=["id_no", "crs", "bbox"],
             delimiter=",",
             lineterminator="\n",
         )
@@ -24,13 +24,12 @@ def getmeta(indir, mfile):
             try:
                 print("Processed: " + str(i) + " of " + str(flength), end="\r")
                 fname = os.path.basename(filename).split(".tif")[0]
-                xsize = gtif.tif_shape[1]
-                ysize = gtif.tif_shape[2]
-                bsize = gtif.tif_shape[0]
+                crs = gtif.as_crs
+                bbox = gtif.tif_bBox_wgs_84
                 with open(mfile, "a") as csvfile:
                     writer = csv.writer(
                         csvfile, delimiter=",", lineterminator="\n")
-                    writer.writerow([fname, xsize, ysize, bsize])
+                    writer.writerow([fname, crs, bbox])
                 csvfile.close()
                 i = i + 1
             except Exception as error:
