@@ -3,37 +3,41 @@ from __future__ import print_function
 import csv
 import os
 
-from geotiff import GeoTiff
-
 
 def getmeta(indir, mfile):
+    try:
+        from osgeo import gdal
+    except ImportError:
+        import gdal
     i = 1
     flength = len([name for name in os.listdir(
         indir) if name.endswith(".tif")])
     with open(mfile, "w") as csvfile:
         writer = csv.DictWriter(
             csvfile,
-            fieldnames=["id_no", "crs", "bbox"],
+            fieldnames=["id_no", "xsize", "ysize", "num_bands"],
             delimiter=",",
             lineterminator="\n",
         )
         writer.writeheader()
     for filename in os.listdir(indir):
         if filename.endswith(".tif"):
-            gtif = GeoTiff(os.path.join(indir, filename))
+            gtif = gdal.Open(os.path.join(indir, filename))
             try:
                 print("Processed: " + str(i) + " of " + str(flength), end="\r")
-                fname = os.path.basename(filename).split(".tif")[0]
-                crs = gtif.as_crs
-                bbox = gtif.tif_bBox_wgs_84
+                fname = os.path.basename(
+                    gtif.GetDescription()).split(".tif")[0]
+                xsize = gtif.RasterXSize
+                ysize = gtif.RasterYSize
+                bsize = gtif.RasterCount
                 with open(mfile, "a") as csvfile:
                     writer = csv.writer(
                         csvfile, delimiter=",", lineterminator="\n")
-                    writer.writerow([fname, crs, bbox])
+                    writer.writerow([fname, xsize, ysize, bsize])
                 csvfile.close()
                 i = i + 1
-            except Exception as error:
-                print(error)
+            except Exception as e:
+                print(e)
                 i = i + 1
 
 

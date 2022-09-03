@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.5.8
+- Adding dependency on GDAL again to handle custom geotiffs correctly.
+- Added back rename tool and improvements made in v0.5.6
+- Updated language to notify users of images in a collection or tables in a folder
+
 ### 0.5.7
 - Getmeta tool now generates crs and bounding box
 

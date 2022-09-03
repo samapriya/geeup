@@ -286,7 +286,7 @@ def __find_remaining_assets_for_upload(path_to_local_assets, path_remote):
                 sys.exit(1)
             elif len(assets_left_for_upload) > 0:
                 print(
-                    f"Total of {len(assets_left_for_upload)} assets remaining : {len(set(remote_assets))} assets with {len(set(tasked_assets))} associated tasks running or submitted"
+                    f"Total of {len(assets_left_for_upload)} assets remaining : Total of {len(set(remote_assets))} already in collection with {len(set(tasked_assets))} associated tasks running or submitted"
                 )
 
             assets_left_for_upload_full_path = [

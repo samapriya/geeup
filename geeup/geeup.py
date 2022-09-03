@@ -1,7 +1,8 @@
-from .zipfiles import zipshape
-from .tuploader import tabup
-from .getmeta import getmeta
 from .batch_uploader import upload
+from .getmeta import getmeta
+from .tuploader import tabup
+from .zipfiles import zipshape
+
 __copyright__ = """
 
     Copyright 2021 Samapriya Roy
@@ -29,6 +30,7 @@ import subprocess
 import sys
 import time
 import webbrowser
+from datetime import datetime
 from os.path import expanduser
 
 import ee
@@ -40,6 +42,75 @@ from logzero import logger
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
+if str(platform.system().lower()) == "windows":
+    version = sys.version_info[0]
+    try:
+        import pipwin
+
+        if pipwin.__version__ == "0.5.0":
+            pass
+        else:
+            subprocess.call(
+                "python" + str(version) + " -m pip install pipwin==0.5.0", shell=True
+            )
+            subprocess.call("pipwin refresh", shell=True)
+        """Check if the pipwin cache is old: useful if you are upgrading porder on windows
+        [This section looks if the pipwin cache is older than two weeks]
+        """
+        home_dir = expanduser("~")
+        fullpath = os.path.join(home_dir, ".pipwin")
+        file_mod_time = os.stat(fullpath).st_mtime
+        if int((time.time() - file_mod_time) / 60) > 90000:
+            print("Refreshing your pipwin cache")
+            subprocess.call("pipwin refresh", shell=True)
+    except ImportError:
+        subprocess.call(
+            "python" + str(version) + " -m pip install pipwin==0.5.0", shell=True
+        )
+        subprocess.call("pipwin refresh", shell=True)
+    except Exception as e:
+        logger.exception(e)
+    try:
+        import gdal
+    except ImportError:
+        try:
+            from osgeo import gdal
+        except ModuleNotFoundError:
+            subprocess.call("pipwin install gdal", shell=True)
+    except ModuleNotFoundError or ImportError:
+        subprocess.call("pipwin install gdal", shell=True)
+    except Exception as e:
+        logger.exception(e)
+    try:
+        import pandas
+    except ImportError:
+        subprocess.call("pipwin install pandas", shell=True)
+    except Exception as e:
+        logger.exception(e)
+    try:
+        import pyproj
+    except ImportError:
+        subprocess.call("pipwin install pyproj", shell=True)
+    except Exception as e:
+        logger.exception(e)
+    try:
+        import shapely
+    except ImportError:
+        subprocess.call("pipwin install shapely", shell=True)
+    except Exception as e:
+        logger.exception(e)
+    try:
+        import fiona
+    except ImportError:
+        subprocess.call("pipwin install fiona", shell=True)
+    except Exception as e:
+        logger.exception(e)
+    try:
+        import geopandas
+    except ImportError:
+        subprocess.call("pipwin install geopandas", shell=True)
+    except Exception as e:
+        logger.exception(e)
 
 lpath = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(lpath)
@@ -123,7 +194,24 @@ def read_from_parser(args):
     readme()
 
 
+def rename(directory):
+    file_list = [file for file in os.listdir(directory)]
+    for i, file_original in enumerate(file_list):
+        file_name, file_extension = os.path.splitext(file_original)
+        string = re.sub(r'[^a-zA-Z0-9 _-]', r'', file_name)
+        string = re.sub(r"\s+", "_", string)
+        if file_original != string:
+            print(f'Renaming {file_original} to {string}{file_extension}')
+            os.rename(os.path.join(directory, file_original),
+                      os.path.join(directory, f'{string}{file_extension}'))
+
+
+def rename_from_parser(args):
+    rename(directory=args.input)
+
 # cookie setup
+
+
 def cookie_setup():
     platform_info = platform.system().lower()
     if str(platform_info) == "linux" or str(platform_info) == "darwin":
@@ -275,21 +363,47 @@ def tabup_from_parser(args):
     )
 
 
-def tasks():
+def tasks(state):
     ee.Initialize()
-    statuses = ee.data.listOperations()
-    st = []
-    for status in statuses:
-        st.append(status["metadata"]["state"])
-    print(f"Tasks Running: {st.count('RUNNING')}")
-    print(f"Tasks Pending: {st.count('PENDING')}")
-    print(f"Tasks Completed: {st.count('SUCCEEDED')}")
-    print(f"Tasks Failed: {st.count('FAILED')}")
-    print(f"Tasks Cancelled: {st.count('CANCELLED') + st.count('CANCELLING')}")
+    if state is not None:
+        task_bundle = []
+        operations = [status
+                      for status in ee.data.listOperations() if status["metadata"]["state"] == state]
+        for operation in operations:
+            task_id = operation['name'].split('/')[-1]
+            description = operation['metadata']['description'].split(
+                ':')[-1].strip().replace('"', '')
+            op_type = operation['metadata']['type']
+            attempt_count = str(operation['metadata']['attempt'])
+            start = datetime.strptime(
+                operation['metadata']["startTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
+            end = datetime.strptime(
+                operation['metadata']["updateTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
+            time_difference = end-start
+            item = {
+                "task_id": task_id,
+                "operation_type": op_type,
+                "description/path": description,
+                "time_difference": str(time_difference),
+                "attempt": attempt_count
+            }
+            task_bundle.append(item)
+        print(json.dumps(task_bundle, indent=2))
+    else:
+        statuses = ee.data.listOperations()
+        st = []
+        for status in statuses:
+            st.append(status["metadata"]["state"])
+        print(f"Tasks Running: {st.count('RUNNING')}")
+        print(f"Tasks Pending: {st.count('PENDING')}")
+        print(f"Tasks Completed: {st.count('SUCCEEDED')}")
+        print(f"Tasks Failed: {st.count('FAILED')}")
+        print(
+            f"Tasks Cancelled: {st.count('CANCELLED') + st.count('CANCELLING')}")
 
 
 def tasks_from_parser(args):
-    tasks()
+    tasks(state=args.state)
 
 
 def cancel_tasks(tasks):
@@ -417,6 +531,19 @@ def main(args=None):
     )
     parser_quota.set_defaults(func=quota_from_parser)
 
+    parser_rename = subparsers.add_parser(
+        "rename",
+        help="Renames filename to adhere to EE naming rules: Caution this is in place renaming",
+    )
+    required_named = parser_rename.add_argument_group(
+        "Required named arguments.")
+    required_named.add_argument(
+        "--input",
+        help="Path to the input directory with all files to be uploaded",
+        required=True,
+    )
+    parser_rename.set_defaults(func=rename_from_parser)
+
     parser_zipshape = subparsers.add_parser(
         "zipshape",
         help="Zips all shapefiles and subsidary files in folder into individual zip files",
@@ -522,6 +649,12 @@ def main(args=None):
     parser_tasks = subparsers.add_parser(
         "tasks",
         help="Queries current task status [completed,running,ready,failed,cancelled]",
+    )
+    optional_named = parser_tasks.add_argument_group(
+        "Optional named arguments")
+    optional_named.add_argument(
+        "--state",
+        help="Query by state type SUCCEEDED|PENDING|RUNNING|FAILED",
     )
     parser_tasks.set_defaults(func=tasks_from_parser)
 

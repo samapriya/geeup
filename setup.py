@@ -15,7 +15,7 @@ def readme():
 
 setuptools.setup(
     name="geeup",
-    version="0.5.7",
+    version="0.5.8",
     packages=find_packages(),
     url="https://github.com/samapriya/geeup",
     install_requires=[
@@ -26,14 +26,11 @@ setuptools.setup(
         "beautifulsoup4 >= 4.9.0",
         "natsort >= 8.1.0",
         "pandas>=0.23.0",
-        "geotiff>=0.2.4",
         "psutil>=5.4.5",
         "cerberus>=1.3.4",
         "requests_toolbelt >= 0.7.0",
         "pytest >= 3.0.0",
         "google-cloud-storage >= 1.1.1",
-        'pySmartDL==1.2.5;python_version<"3.4"',
-        'pySmartDL>=1.3.1;python_version>"3.4"',
         "pathlib>=1.0.1",
         "lxml>=4.1.1",
         "oauth2client>=4.1.3",
