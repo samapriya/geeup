@@ -4,7 +4,7 @@
 [![Hits-of-Code](https://hitsofcode.com/github/samapriya/geeup?branch=master)](https://hitsofcode.com/github/samapriya/geeup?branch=master)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6665370.svg)](https://doi.org/10.5281/zenodo.6665370)
 [![PyPI version](https://badge.fury.io/py/geeup.svg)](https://badge.fury.io/py/geeup)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/geeup)
+[![Downloads](https://pepy.tech/badge/geeup/month)](https://pepy.tech/project/geeup)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![CI geeup](https://github.com/samapriya/geeup/workflows/CI%20geeup/badge.svg)
 
