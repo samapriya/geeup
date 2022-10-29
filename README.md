@@ -7,6 +7,8 @@
 [![Downloads](https://pepy.tech/badge/geeup/month)](https://pepy.tech/project/geeup)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![CI geeup](https://github.com/samapriya/geeup/workflows/CI%20geeup/badge.svg)
+[![Donate](https://img.shields.io/badge/Donate-Buy%20me%20a%20Chai-teal)](https://www.buymeacoffee.com/samapriya)
+[![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/samapriya)
 
 This tool came from the simple need to handle batch uploads of both image assets to collections. Thanks to the new table feature, the possibility of batch uploading shapefiles and CSVs into a folder became more common. This tool was designed to allow the user to preprocess imagery and shapefiles and process all formats of uploads currently possible on Google Earth Engine. The command line tool provides a simple quota query tool and a task state tool, to name a few additional tasks you can run with this tool. I hope this tool with a simple objective proves helpful to a few users of Google Earth Engine.
 
