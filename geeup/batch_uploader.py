@@ -91,7 +91,7 @@ def upload(
     destination_path,
     metadata_path=None,
     nodata_value=None,
-    bucket_name=None,
+    overwrite=None,
 ):
     schema = {"collection_path": {
         "type": "string", "regex": "^[a-zA-Z0-9/_-]+$"}}
@@ -120,18 +120,18 @@ def upload(
     __create_image_collection(destination_path)
 
     images_for_upload_path = __find_remaining_assets_for_upload(
-        all_images_paths, destination_path
+        all_images_paths, destination_path, overwrite
     )
     no_images = len(images_for_upload_path)
 
     if no_images == 0:
         print("No images found that match %s. Exiting...", path)
         sys.exit(1)
-
+    file_count = len(images_for_upload_path)
     for current_image_no, image_path in enumerate(natsorted(images_for_upload_path)):
-        logging.info(
-            f"Processing image {current_image_no + 1} out of {no_images} : {image_path}"
-        )
+        # logging.info(
+        #     f"Processing image {current_image_no + 1} out of {no_images} : {image_path}"
+        # )
         status = ["RUNNING", "PENDING"]
         task_count = len(
             [
@@ -242,13 +242,19 @@ def upload(
                             raise Exception
                         with open(os.path.join(lp, "data.json"), "w") as outfile:
                             json.dump(main_payload, outfile)
-                        subprocess.call(
-                            "earthengine upload image --manifest "
-                            + '"'
-                            + os.path.join(lp, "data.json")
-                            + '"',
-                            shell=True,
-                            stdout=subprocess.PIPE,
+                        check_list = ['yes', 'y']
+                        if overwrite is not None and overwrite.lower() in check_list:
+                            output = subprocess.check_output(
+                                f"earthengine upload image --manifest {os.path.join(lp, 'data.json')} -f",
+                                shell=True
+                            )
+                        else:
+                            output = subprocess.check_output(
+                                f"earthengine upload image --manifest {os.path.join(lp, 'data.json')}",
+                                shell=True
+                            )
+                        logging.info(
+                            f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}"
                         )
         except Exception as error:
             print(error)
@@ -257,44 +263,48 @@ def upload(
             sys.exit("Program escaped by User")
 
 
-def __find_remaining_assets_for_upload(path_to_local_assets, path_remote):
+def __find_remaining_assets_for_upload(path_to_local_assets, path_remote, overwrite):
     local_assets = [__get_filename_from_path(
         path) for path in path_to_local_assets]
     if __collection_exist(path_remote):
-        remote_assets = __get_asset_names_from_collection(path_remote)
-        tasked_assets = []
-        status = ["RUNNING", "PENDING"]
-        for task in ee.data.listOperations():
-            if (
-                task["metadata"]["type"] == "INGEST_IMAGE"
-                and task["metadata"]["state"] in status
-            ):
-                tasked_assets.append(
-                    task["metadata"]["description"]
-                    .split(":")[-1]
-                    .split("/")[-1]
-                    .replace('"', "")
+        check_list = ['yes', 'y']
+        if overwrite is not None and overwrite.lower() in check_list:
+            return path_to_local_assets
+        else:
+            remote_assets = __get_asset_names_from_collection(path_remote)
+            tasked_assets = []
+            status = ["RUNNING", "PENDING"]
+            for task in ee.data.listOperations():
+                if (
+                    task["metadata"]["type"] == "INGEST_IMAGE"
+                    and task["metadata"]["state"] in status
+                ):
+                    tasked_assets.append(
+                        task["metadata"]["description"]
+                        .split(":")[-1]
+                        .split("/")[-1]
+                        .replace('"', "")
+                    )
+            if len(remote_assets) >= 0:
+                assets_left_for_upload = set(local_assets).difference(
+                    set(remote_assets), set(tasked_assets)
                 )
-        if len(remote_assets) >= 0:
-            assets_left_for_upload = set(local_assets).difference(
-                set(remote_assets), set(tasked_assets)
-            )
-            if len(assets_left_for_upload) == 0:
-                print(
-                    f"All assets already ingested or running : {len(set(remote_assets))} assets ingested with {len(set(tasked_assets))} tasks running or submitted"
-                )
-                sys.exit(1)
-            elif len(assets_left_for_upload) > 0:
-                print(
-                    f"Total of {len(assets_left_for_upload)} assets remaining : Total of {len(set(remote_assets))} already in collection with {len(set(tasked_assets))} associated tasks running or submitted"
-                )
+                if len(assets_left_for_upload) == 0:
+                    print(
+                        f"All assets already ingested or running : {len(set(remote_assets))} assets ingested with {len(set(tasked_assets))} tasks running or submitted"
+                    )
+                    sys.exit(1)
+                elif len(assets_left_for_upload) > 0:
+                    print(
+                        f"Total of {len(assets_left_for_upload)} assets remaining : Total of {len(set(remote_assets))} already in collection with {len(set(tasked_assets))} associated tasks running or submitted"
+                    )
 
-            assets_left_for_upload_full_path = [
-                path
-                for path in path_to_local_assets
-                if __get_filename_from_path(path) in assets_left_for_upload
-            ]
-            return assets_left_for_upload_full_path
+                assets_left_for_upload_full_path = [
+                    path
+                    for path in path_to_local_assets
+                    if __get_filename_from_path(path) in assets_left_for_upload
+                ]
+                return assets_left_for_upload_full_path
 
     return path_to_local_assets
 
@@ -414,37 +424,12 @@ def __upload_file_gee(session, file_path):
     wait_exponential_max=4000,
     stop_max_attempt_number=3,
 )
-def __upload_file_gcs(storage_client, bucket_name, image_path):
-    bucket = storage_client.get_bucket(bucket_name)
-    blob_name = __get_filename_from_path(path=image_path)
-    blob = bucket.blob(blob_name)
-
-    blob.upload_from_filename(image_path)
-
-    url = "gs://" + bucket_name + "/" + blob_name
-
-    return url
-
-
 def __get_filename_from_path(path):
     return os.path.splitext(os.path.basename(os.path.normpath(path)))[0]
 
 
 def __get_number_of_running_tasks():
     return len([task for task in ee.data.getTaskList() if task["state"] == "RUNNING"])
-
-
-def __wait_for_tasks_to_complete(waiting_time, no_allowed_tasks_running):
-    tasks_running = __get_number_of_running_tasks()
-    while tasks_running > no_allowed_tasks_running:
-        logging.info(
-            "Number of running tasks is %d. Sleeping for %d s until it goes down to %d",
-            tasks_running,
-            waiting_time,
-            no_allowed_tasks_running,
-        )
-        time.sleep(waiting_time)
-        tasks_running = __get_number_of_running_tasks()
 
 
 def __collection_exist(path):

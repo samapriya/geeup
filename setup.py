@@ -15,10 +15,11 @@ def readme():
 
 setuptools.setup(
     name="geeup",
-    version="0.5.8",
+    version="0.5.9",
     packages=find_packages(),
     url="https://github.com/samapriya/geeup",
     install_requires=[
+        "wheel",
         "earthengine_api>=0.1.274",
         "logzero>=1.5.0",
         "requests >= 2.10.0",

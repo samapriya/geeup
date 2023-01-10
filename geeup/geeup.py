@@ -46,12 +46,11 @@ if str(platform.system().lower()) == "windows":
     version = sys.version_info[0]
     try:
         import pipwin
-
         if pipwin.__version__ == "0.5.0":
             pass
         else:
             subprocess.call(
-                "python" + str(version) + " -m pip install pipwin==0.5.0", shell=True
+                f"{sys.executable}" + " -m pip install pipwin==0.5.0", shell=True
             )
             subprocess.call("pipwin refresh", shell=True)
         """Check if the pipwin cache is old: useful if you are upgrading porder on windows
@@ -59,13 +58,9 @@ if str(platform.system().lower()) == "windows":
         """
         home_dir = expanduser("~")
         fullpath = os.path.join(home_dir, ".pipwin")
-        file_mod_time = os.stat(fullpath).st_mtime
-        if int((time.time() - file_mod_time) / 60) > 90000:
-            print("Refreshing your pipwin cache")
-            subprocess.call("pipwin refresh", shell=True)
     except ImportError:
         subprocess.call(
-            "python" + str(version) + " -m pip install pipwin==0.5.0", shell=True
+            f"{sys.executable}" + " -m pip install pipwin==0.5.0", shell=True
         )
         subprocess.call("pipwin refresh", shell=True)
     except Exception as e:
@@ -84,31 +79,9 @@ if str(platform.system().lower()) == "windows":
     try:
         import pandas
     except ImportError:
-        subprocess.call("pipwin install pandas", shell=True)
-    except Exception as e:
-        logger.exception(e)
-    try:
-        import pyproj
-    except ImportError:
-        subprocess.call("pipwin install pyproj", shell=True)
-    except Exception as e:
-        logger.exception(e)
-    try:
-        import shapely
-    except ImportError:
-        subprocess.call("pipwin install shapely", shell=True)
-    except Exception as e:
-        logger.exception(e)
-    try:
-        import fiona
-    except ImportError:
-        subprocess.call("pipwin install fiona", shell=True)
-    except Exception as e:
-        logger.exception(e)
-    try:
-        import geopandas
-    except ImportError:
-        subprocess.call("pipwin install geopandas", shell=True)
+        subprocess.call(
+            f"{sys.executable}" + " -m pip install pandas", shell=True
+        )
     except Exception as e:
         logger.exception(e)
 
@@ -327,21 +300,6 @@ def getmeta_from_parser(args):
     getmeta(indir=args.input, mfile=args.metadata)
 
 
-def _comma_separated_strings(string):
-    """Parses an input consisting of comma-separated strings.
-    Slightly modified version of: https://pypkg.com/pypi/earthengine-api/f/ee/cli/commands.py
-    """
-    error_msg = (
-        "Argument should be a comma-separated list of alphanumeric strings (no spaces or other"
-        "special characters): {}"
-    )
-    values = string.split(",")
-    for name in values:
-        if not name.isalnum():
-            raise argparse.ArgumentTypeError(error_msg.format(string))
-    return values
-
-
 def upload_from_parser(args):
     upload(
         user=args.user,
@@ -350,6 +308,7 @@ def upload_from_parser(args):
         metadata_path=args.metadata,
         nodata_value=args.nodata,
         pyramiding=args.pyramids,
+        overwrite=args.overwrite
     )
 
 
@@ -360,6 +319,7 @@ def tabup_from_parser(args):
         destination=args.dest,
         x=args.x,
         y=args.y,
+        overwrite=args.overwrite
     )
 
 
@@ -610,6 +570,10 @@ def main(args=None):
         "--pyramids",
         help="Pyramiding Policy, MEAN, MODE, MIN, MAX, SAMPLE",
     )
+    optional_named.add_argument(
+        "--overwrite",
+        help="Default is No but you can pass yes or y",
+    )
     required_named.add_argument(
         "-u", "--user", help="Google account name (gmail address)."
     )
@@ -643,6 +607,10 @@ def main(args=None):
     optional_named.add_argument(
         "--y",
         help="Column with latitude value",
+    )
+    optional_named.add_argument(
+        "--overwrite",
+        help="Default is No but you can pass yes or y",
     )
     parser_tabup.set_defaults(func=tabup_from_parser)
 

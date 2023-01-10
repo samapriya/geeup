@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.5.9
+- Reduced dependency on pipwin and removed pipwin refresh checks
+- Fixed python path issue for pip installation
+- Allow for overwriting assets in folders or collections
+- Created consistent output including task ID for both tables and images
+- Overall improvements and modifications
+
 ### 0.5.8
 - Adding dependency on GDAL again to handle custom geotiffs correctly.
 - Added back rename tool and improvements made in v0.5.6

@@ -128,7 +128,7 @@ def get_auth_session(uname):
         print(response.status_code, response.text)
 
 
-def tabup(dirc, uname, destination, x, y):
+def tabup(dirc, uname, destination, x, y, overwrite=None):
     ee.Initialize()
     schema = {"folder_path": {
         "type": "string", "regex": "^[a-zA-Z0-9/_-]+$"}}
@@ -183,8 +183,12 @@ def tabup(dirc, uname, destination, x, y):
                 .split("/")[-1]
                 .replace('"', "")
             )
-    diff_set = set(table_exists).difference(
-        set(gee_table_exists), set(tasked_assets))
+    check_list = ['yes', 'y']
+    if overwrite is not None and overwrite.lower() in check_list:
+        diff_set = set(table_exists)
+    else:
+        diff_set = set(table_exists).difference(
+            set(gee_table_exists), set(tasked_assets))
     if len(diff_set) > 0:
         print(
             f"Total of {len(diff_set)} assets remaining : Total of {len(set(gee_table_exists))} already in folder with {len(set(tasked_assets))} associated tasks running or submitted"
@@ -269,13 +273,16 @@ def tabup(dirc, uname, destination, x, y):
                                     os.path.join(lp, "data.json"), "w"
                                 ) as outfile:
                                     json.dump(main_payload, outfile)
-                                output = subprocess.check_output(
-                                    "earthengine upload table --manifest "
-                                    + '"'
-                                    + os.path.join(lp, "data.json")
-                                    + '"',
-                                    shell=True,
-                                )
+                                if overwrite is not None and overwrite.lower() in check_list:
+                                    output = subprocess.check_output(
+                                        f"earthengine upload table --manifest {os.path.join(lp, 'data.json')} -f",
+                                        shell=True
+                                    )
+                                else:
+                                    output = subprocess.check_output(
+                                        f"earthengine upload table --manifest {os.path.join(lp, 'data.json')}",
+                                        shell=True
+                                    )
                                 logging.info(
                                     f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}"
                                 )
