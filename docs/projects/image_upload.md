@@ -5,7 +5,7 @@ The script creates an Image Collection from GeoTIFFs in your local directory. By
 
 ```
 geeup upload -h
-usage: geeup upload [-h] --source SOURCE --dest DEST -m METADATA [--nodata NODATA] [--pyramids PYRAMIDS] [-u USER]
+usage: geeup upload [-h] --source SOURCE --dest DEST -m METADATA [--nodata NODATA] [--pyramids PYRAMIDS] [--overwrite OVERWRITE] [-u USER]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -20,6 +20,8 @@ Required named arguments.:
 Optional named arguments:
   --nodata NODATA       The value to burn into the raster as NoData (missing data)
   --pyramids PYRAMIDS   Pyramiding Policy, MEAN, MODE, MIN, MAX, SAMPLE
+  --overwrite OVERWRITE
+                        Default is No but you can pass yes or y
 ```
 
 Example setup would be

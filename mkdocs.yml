@@ -8,12 +8,11 @@ repo_name: geeup
 repo_url: https://github.com/samapriya/geeup
 
 # Copyright
-copyright: 'Copyright &copy; 2022 - 2023 Samapriya Roy'
-
+copyright: "Copyright &copy; 2022 - 2023 Samapriya Roy"
 
 # Configuration
 theme:
-  name: 'material'
+  name: "material"
 
   # 404 page
   static_templates:
@@ -26,9 +25,18 @@ theme:
   # Default values, taken from mkdocs_theme.yml
   language: en
   palette:
-    scheme: default
-    primary: deep purple
-    accent: deep orange
+    - scheme: default
+      primary: yellow
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      primary: red
+      accent: red
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
   font:
     text: Google Sans
     code: Regular
@@ -43,10 +51,23 @@ extra:
       link: https://github.com/samapriya
     - icon: fontawesome/brands/medium
       link: https://medium.com/@samapriyaroy
+    - icon: fontawesome/brands/mastodon
+      link: https://mapstodon.space/@samapriya
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/samapriyaroy
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/in/samapriya
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: timeago
+  - minify:
+      minify_html: true
 
 # Extensions
 markdown_extensions:
@@ -88,25 +109,23 @@ markdown_extensions:
       custom_checkbox: true
   - pymdownx.tilde
 
-
-
 # Page tree
 nav:
   - Introduction: index.md
   - License: license.md
   - General Installation: installation.md
   - Setup tools:
-    - GEE authenticate: projects/ee_init.md
-    - Cookies Setup: projects/cookies_setup.md
-    - Quota tool: projects/quota.md
+      - GEE authenticate: projects/ee_init.md
+      - Cookies Setup: projects/cookies_setup.md
+      - Quota tool: projects/quota.md
   - Upload tools:
-    - Get Metadata: projects/get_metadata.md
-    - geeup Rename: projects/rename.md
-    - Zip Shapefiles: projects/zipshape.md
-    - Image Upload: projects/image_upload.md
-    - Table Upload: projects/table_upload.md
+      - Get Metadata: projects/get_metadata.md
+      - geeup Rename: projects/rename.md
+      - Zip Shapefiles: projects/zipshape.md
+      - Image Upload: projects/image_upload.md
+      - Table Upload: projects/table_upload.md
   - Additional tools:
-    - Task status: projects/task_status.md
-    - Cancel tasks: projects/cancel_tasks.md
-    - Delete assets: projects/delete.md
+      - Task status: projects/task_status.md
+      - Cancel tasks: projects/cancel_tasks.md
+      - Delete assets: projects/delete.md
   - Changelog: changelog.md

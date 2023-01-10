@@ -4,7 +4,7 @@ This tool allows you to batch download tables/shapefiles/CSVs to a folder. It us
 
 ```
 geeup tabup -h
-usage: geeup tabup [-h] --source SOURCE --dest DEST [-u USER] [--x X] [--y Y]
+usage: geeup tabup [-h] --source SOURCE --dest DEST [-u USER] [--x X] [--y Y] [--overwrite OVERWRITE]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -17,6 +17,8 @@ Required named arguments.:
 Optional named arguments:
   --x X                 Column with longitude value
   --y Y                 Column with latitude value
+  --overwrite OVERWRITE
+                        Default is No but you can pass yes or y
 ```
 Example setup
 
