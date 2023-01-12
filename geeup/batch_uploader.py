@@ -172,7 +172,7 @@ def upload(
             with open(metadata_path, "r") as f:
                 reader = csv.DictReader(f, delimiter=",")
                 for i, line in enumerate(reader):
-                    if line["id_no"] == os.path.basename(image_path).split(".")[0]:
+                    if line["id_no"] == os.path.basename(image_path).split(".tif")[0]:
                         j = {}
                         for integer in intcol:
                             value = integer

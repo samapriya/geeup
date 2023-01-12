@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.6.0
+- Better error logging for GeoTiff uploads
+- Fixed [Issue 52](https://github.com/samapriya/geeup/issues/52)
+
 ### 0.5.9
 - Reduced dependency on pipwin and removed pipwin refresh checks
 - Fixed python path issue for pip installation
