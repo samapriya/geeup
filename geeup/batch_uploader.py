@@ -254,7 +254,7 @@ def upload(
                                 shell=True
                             )
                         logging.info(
-                            f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}"
+                            f"Ingesting {current_image_no+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}"
                         )
         except Exception as error:
             print(error)
