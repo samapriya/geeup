@@ -121,7 +121,7 @@ def geeup_version():
         print(
             "Current version of geeup is {} upgrade to lastest version: {}".format(
                 pkg_resources.get_distribution("geeup").version,
-                company.string.strip().split(" ")[-1],
+                version_latest('geeup'),
             )
         )
         print(
@@ -135,7 +135,7 @@ def geeup_version():
         print(
             "Possibly running staging code {} compared to pypi release {}".format(
                 pkg_resources.get_distribution("geeup").version,
-                company.string.strip().split(" ")[-1],
+                version_latest('geeup'),
             )
         )
         print(
