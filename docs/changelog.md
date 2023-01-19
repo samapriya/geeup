@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.6.1
+- Removed dependency on pipwin uses pipgeo instead
+- Removed dependency on beautifulsoup
+- Corrected enumberation for raster upload
+
 ### 0.6.0
 - Better error logging for GeoTiff uploads
 - Fixed [Issue 52](https://github.com/samapriya/geeup/issues/52)

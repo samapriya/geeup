@@ -24,7 +24,6 @@ setuptools.setup(
         "logzero>=1.5.0",
         "requests >= 2.10.0",
         "retrying >= 1.3.3",
-        "beautifulsoup4 >= 4.9.0",
         "natsort >= 8.1.0",
         "pandas>=0.23.0",
         "psutil>=5.4.5",

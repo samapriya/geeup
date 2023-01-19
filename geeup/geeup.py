@@ -31,62 +31,13 @@ import sys
 import time
 import webbrowser
 from datetime import datetime
-from os.path import expanduser
 
 import ee
-#! /usr/bin/env python
 import pkg_resources
 import requests
-from bs4 import BeautifulSoup
 from logzero import logger
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
-
-if str(platform.system().lower()) == "windows":
-    version = sys.version_info[0]
-    try:
-        import pipwin
-        if pipwin.__version__ == "0.5.0":
-            pass
-        else:
-            subprocess.call(
-                f"{sys.executable}" + " -m pip install pipwin==0.5.0", shell=True
-            )
-            subprocess.call("pipwin refresh", shell=True)
-        """Check if the pipwin cache is old: useful if you are upgrading porder on windows
-        [This section looks if the pipwin cache is older than two weeks]
-        """
-        home_dir = expanduser("~")
-        fullpath = os.path.join(home_dir, ".pipwin")
-    except ImportError:
-        subprocess.call(
-            f"{sys.executable}" + " -m pip install pipwin==0.5.0", shell=True
-        )
-        subprocess.call("pipwin refresh", shell=True)
-    except Exception as e:
-        logger.exception(e)
-    try:
-        import gdal
-    except ImportError:
-        try:
-            from osgeo import gdal
-        except ModuleNotFoundError:
-            subprocess.call("pipwin install gdal", shell=True)
-    except ModuleNotFoundError or ImportError:
-        subprocess.call("pipwin install gdal", shell=True)
-    except Exception as e:
-        logger.exception(e)
-    try:
-        import pandas
-    except ImportError:
-        subprocess.call(
-            f"{sys.executable}" + " -m pip install pandas", shell=True
-        )
-    except Exception as e:
-        logger.exception(e)
-
-lpath = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(lpath)
 
 
 class Solution:
@@ -105,17 +56,61 @@ class Solution:
 
 ob1 = Solution()
 
+if str(platform.system().lower()) == "windows":
+    version = sys.version_info[0]
+    try:
+        import pipgeo
+        response = requests.get('https://pypi.org/pypi/pipgeo/json')
+        latest_version = response.json()['info']['version']
+        vcheck = ob1.compareVersion(
+            latest_version,
+            pkg_resources.get_distribution("pipgeo").version,
+        )
+        if vcheck == 1:
+            subprocess.call(
+                f"{sys.executable}" + " -m pip install pipgeo --upgrade", shell=True
+            )
+    except ImportError:
+        subprocess.call(
+            f"{sys.executable}" + " -m pip install pipgeo", shell=True
+        )
+    except Exception as e:
+        logger.exception(e)
+    try:
+        import gdal
+    except ImportError:
+        try:
+            from osgeo import gdal
+        except ModuleNotFoundError:
+            subprocess.call("pipgeo fetch --lib gdal", shell=True)
+    except ModuleNotFoundError or ImportError:
+        subprocess.call("pipgeo fetch --lib gdal", shell=True)
+    except Exception as e:
+        logger.exception(e)
+    try:
+        import pandas
+    except ImportError:
+        subprocess.call(
+            f"{sys.executable}" + " -m pip install pandas", shell=True
+        )
+    except Exception as e:
+        logger.exception(e)
+
+lpath = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(lpath)
+
 # Get package version
 
 
+def version_latest(package):
+    response = requests.get(f'https://pypi.org/pypi/{package}/json')
+    latest_version = response.json()['info']['version']
+    return latest_version
+
+
 def geeup_version():
-    url = "https://pypi.org/project/geeup/"
-    source = requests.get(url)
-    html_content = source.text
-    soup = BeautifulSoup(html_content, "html.parser")
-    company = soup.find("h1")
     vcheck = ob1.compareVersion(
-        company.string.strip().split(" ")[-1],
+        version_latest('geeup'),
         pkg_resources.get_distribution("geeup").version,
     )
     if vcheck == 1:
