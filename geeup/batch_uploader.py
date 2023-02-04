@@ -240,21 +240,16 @@ def upload(
                         if v.validate(asset_validate, schema) is False:
                             print(v.errors)
                             raise Exception
-                        with open(os.path.join(lp, "data.json"), "w") as outfile:
-                            json.dump(main_payload, outfile)
+                        request_id = ee.data.newTaskId()[0]
                         check_list = ['yes', 'y']
                         if overwrite is not None and overwrite.lower() in check_list:
-                            output = subprocess.check_output(
-                                f"earthengine upload image --manifest {os.path.join(lp, 'data.json')} -f",
-                                shell=True
-                            )
+                            output = ee.data.startIngestion(
+                                request_id, main_payload, allow_overwrite=True)
                         else:
-                            output = subprocess.check_output(
-                                f"earthengine upload image --manifest {os.path.join(lp, 'data.json')}",
-                                shell=True
-                            )
+                            output = ee.data.startIngestion(
+                                request_id, main_payload, allow_overwrite=False)
                         logging.info(
-                            f"Ingesting {current_image_no+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}"
+                            f"Ingesting {current_image_no+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output['id']} & status {output['started']}"
                         )
         except Exception as error:
             print(error)

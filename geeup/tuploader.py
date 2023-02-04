@@ -1,6 +1,6 @@
 __copyright__ = """
 
-    Copyright 2022 Samapriya Roy
+    Copyright 2023 Samapriya Roy
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -269,22 +269,15 @@ def tabup(dirc, uname, destination, x, y, overwrite=None):
                                 if v.validate(asset_validate, schema) is False:
                                     print(v.errors)
                                     raise Exception
-                                with open(
-                                    os.path.join(lp, "data.json"), "w"
-                                ) as outfile:
-                                    json.dump(main_payload, outfile)
+                                request_id = ee.data.newTaskId()[0]
                                 if overwrite is not None and overwrite.lower() in check_list:
-                                    output = subprocess.check_output(
-                                        f"earthengine upload table --manifest {os.path.join(lp, 'data.json')} -f",
-                                        shell=True
-                                    )
+                                    output = ee.data.startTableIngestion(
+                                        request_id, main_payload, allow_overwrite=True)
                                 else:
-                                    output = subprocess.check_output(
-                                        f"earthengine upload table --manifest {os.path.join(lp, 'data.json')}",
-                                        shell=True
-                                    )
+                                    output = ee.data.startTableIngestion(
+                                        request_id, main_payload, allow_overwrite=False)
                                 logging.info(
-                                    f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}"
+                                    f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output['id']} & status {output['started']}"
                                 )
                             elif base_ext == ".csv":
                                 m = MultipartEncoder(
@@ -337,17 +330,15 @@ def tabup(dirc, uname, destination, x, y, overwrite=None):
                                 if v.validate(asset_validate, schema) is False:
                                     print(v.errors)
                                     raise Exception
-                                with open(
-                                    os.path.join(lp, "data.json"), "w"
-                                ) as outfile:
-                                    json.dump(main_payload, outfile)
-                                manifest_file = os.path.join(lp, "data.json")
-                                output = subprocess.check_output(
-                                    f"earthengine upload table --manifest {manifest_file}",
-                                    shell=True,
-                                )
+                                request_id = ee.data.newTaskId()[0]
+                                if overwrite is not None and overwrite.lower() in check_list:
+                                    output = ee.data.startTableIngestion(
+                                        request_id, main_payload, allow_overwrite=True)
+                                else:
+                                    output = ee.data.startTableIngestion(
+                                        request_id, main_payload, allow_overwrite=False)
                                 logging.info(
-                                    f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output.decode('ascii').strip().split(' ')[-1]}"
+                                    f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output['id']} & status {output['started']}"
                                 )
                         except Exception as error:
                             print(error)

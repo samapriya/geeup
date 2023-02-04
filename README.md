@@ -339,6 +339,11 @@ optional arguments:
 
 # Changelog
 
+### 0.6.2
+- Removed call to shell
+- Now prints status of task at task creation
+- Overwrite option for both images and tables
+
 ### 0.6.1
 - Removed dependency on pipwin uses pipgeo instead
 - Removed dependency on beautifulsoup
