@@ -26,6 +26,7 @@ import argparse
 import json
 import os
 import platform
+import re
 import subprocess
 import sys
 import time
