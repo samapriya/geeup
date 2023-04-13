@@ -262,6 +262,7 @@ Required named arguments.:
 
 Optional named arguments:
   --nodata NODATA       The value to burn into the raster as NoData (missing data)
+  --mask MASK           Binary to use last band for mask True or False
   --pyramids PYRAMIDS   Pyramiding Policy, MEAN, MODE, MIN, MAX, SAMPLE
 ```
 
@@ -338,6 +339,9 @@ optional arguments:
 ```
 
 # Changelog
+
+### 0.6.4
+- Added masking option to use last band as mask
 
 ### 0.6.2
 - Removed call to shell

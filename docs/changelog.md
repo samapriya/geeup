@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.6.4
+- Added masking option to use last band as mask
+
 ### 0.6.2
 - Removed call to shell
 - Now prints status of task at task creation

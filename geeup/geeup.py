@@ -303,6 +303,7 @@ def upload_from_parser(args):
         destination_path=args.dest,
         metadata_path=args.metadata,
         nodata_value=args.nodata,
+        mask=args.mask,
         pyramiding=args.pyramids,
         overwrite=args.overwrite
     )
@@ -561,6 +562,11 @@ def main(args=None):
         "--nodata",
         type=int,
         help="The value to burn into the raster as NoData (missing data)",
+    )
+    optional_named.add_argument(
+        "--mask",
+        default=False,
+        help="Binary to use last band for mask True or False",
     )
     optional_named.add_argument(
         "--pyramids",

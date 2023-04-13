@@ -88,6 +88,7 @@ def upload(
     user,
     source_path,
     pyramiding,
+    mask,
     destination_path,
     metadata_path=None,
     nodata_value=None,
@@ -216,6 +217,7 @@ def upload(
                             "end_time": {"seconds": ""},
                             "properties": j,
                             "missing_data": {"values": [nodata_value]},
+                            "maskBands": {"bandIds": [], "tilesetId": ''}
                         }
                         if start is not None:
                             main_payload["start_time"]["seconds"] = start
@@ -227,7 +229,10 @@ def upload(
                             main_payload.pop("end_time")
                         if nodata_value is None:
                             main_payload.pop("missing_data")
-                        # print(json.dumps(main_payload))
+                        if bool(mask) is False:
+                            main_payload.pop("maskBands")
+
+                        # print(json.dumps(main_payload, indent=2))
                         schema = {
                             "asset_path": {
                                 "type": "string",
