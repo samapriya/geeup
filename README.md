@@ -340,6 +340,11 @@ optional arguments:
 
 # Changelog
 
+### 0.6.5
+- Fixed issue with iteritems for pandas >2.0.0
+- Updated task running check and updated function
+- Updated handling boolean for using last band as alpha mask
+
 ### 0.6.4
 - Added masking option to use last band as mask
 

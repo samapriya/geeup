@@ -2,7 +2,7 @@ from __future__ import print_function
 
 __copyright__ = """
 
-    Copyright 2016 Lukasz Tracewski
+    Copyright 2023 Samapriya Roy
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,32 +18,6 @@ __copyright__ = """
 
 """
 __license__ = "Apache 2.0"
-
-__Modifications_copyright__ = """
-
-    Copyright 2022 Samapriya Roy
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-"""
-__license__ = "Apache 2.0"
-
-"""
-Modifications to file:
-- Uses cookie based upload
-- Removed multipart upload
-- Uses polling
-"""
 
 import ast
 import csv
@@ -82,6 +56,19 @@ class CustomErrorHandler(BasicErrorHandler):
     def _format_message(self, field, error):
         print("")
         return "GEE file name & path cannot have spaces & can only have letters, numbers, hyphens and underscores"
+
+
+def task_counter():
+    ee.Initialize()
+    status = ["RUNNING", "PENDING"]
+    task_count = len(
+        [
+            task
+            for task in ee.data.listOperations()
+            if task["metadata"]["state"] in status
+        ]
+    )
+    return task_count
 
 
 def upload(
@@ -133,19 +120,13 @@ def upload(
         # logging.info(
         #     f"Processing image {current_image_no + 1} out of {no_images} : {image_path}"
         # )
-        status = ["RUNNING", "PENDING"]
-        task_count = len(
-            [
-                task
-                for task in ee.data.listOperations()
-                if task["metadata"]["state"] in status
-            ]
-        )
-        while task_count >= 2500:
+        task_count = task_counter()
+        while task_count >= 2800:
             logging.info(
                 f"Total tasks running or submitted {task_count}: waiting for 5 minutes"
             )
             time.sleep(300)
+            task_count = task_counter()
         filename = __get_filename_from_path(path=image_path)
 
         destination_path = ee.data.getAsset(destination_path + "/")["name"]
@@ -165,7 +146,7 @@ def upload(
 
             df = pd.read_csv(metadata_path)
             dd = (df.applymap(type) == str).all(0)
-            for ind, val in dd.iteritems():
+            for ind, val in dd.items():
                 if val == True:
                     slist.append(ind)
             intcol = list(df.select_dtypes(include=["int64"]).columns)

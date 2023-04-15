@@ -566,6 +566,7 @@ def main(args=None):
     optional_named.add_argument(
         "--mask",
         default=False,
+        choices=('True', 'False', 't', 'f'),
         help="Binary to use last band for mask True or False",
     )
     optional_named.add_argument(
