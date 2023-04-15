@@ -4,7 +4,7 @@
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=plastic&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/samapriya/)
 [![Medium](https://img.shields.io/badge/Medium-12100E?style=flat&logo=medium&logoColor=white)](https://medium.com/@samapriyaroy)
 [![Twitter URL](https://img.shields.io/twitter/follow/samapriyaroy?style=social)](https://twitter.com/intent/follow?screen_name=samapriyaroy)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7606098.svg)](https://doi.org/10.5281/zenodo.7606098)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7831458.svg)](https://doi.org/10.5281/zenodo.7831458)
 [![PyPI version](https://badge.fury.io/py/geeup.svg)](https://badge.fury.io/py/geeup)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/geeup)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -21,6 +21,6 @@ This tool came of the simple need to handle batch uploads of both image assets t
 If you find this tool useful, star and cite it as below to show your support
 
 ```
-Samapriya Roy. (2023). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (0.6.2).
-Zenodo. https://doi.org/10.5281/zenodo.7606098
+Samapriya Roy. (2023). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (0.6.5).
+Zenodo. https://doi.org/10.5281/zenodo.7831458
 ```
