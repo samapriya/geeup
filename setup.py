@@ -2,9 +2,8 @@ import os
 import sys
 from distutils.version import StrictVersion
 
-import setuptools
 from setuptools import __version__ as setuptools_version
-from setuptools import find_packages
+from setuptools import find_packages, setup
 from setuptools.command.test import test as TestCommand
 
 
@@ -13,19 +12,20 @@ def readme():
         return f.read()
 
 
-setuptools.setup(
+setup(
     name="geeup",
     version="0.6.5",
+    python_requires=">=3.6",
     packages=find_packages(),
     url="https://github.com/samapriya/geeup",
     install_requires=[
         "wheel",
+        "pandas==2.0.3",
         "earthengine_api>=0.1.370",
         "logzero>=1.5.0",
         "requests >= 2.10.0",
         "retrying >= 1.3.3",
         "natsort >= 8.1.0",
-        "pandas",
         "psutil>=5.4.5",
         "cerberus>=1.3.4",
         "requests_toolbelt >= 0.7.0",
