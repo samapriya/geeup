@@ -42,7 +42,7 @@ jobs:
           done
       - name: List & install wheel files(mac)
         continue-on-error: true
-        if: matrix.os == 'mac-latest'
+        if: matrix.os == 'macos-latest'
         run: |
           for file in dist/*.whl; do
             echo "Installing $file..."
