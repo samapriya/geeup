@@ -16,7 +16,6 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
         python-version: ["3.8", "3.9", "3.10"]
-      fail-fast: false
       steps:
           - uses: actions/checkout@v3
           - name: Set up Python
@@ -35,12 +34,7 @@ jobs:
           pip install -U pip setuptools
           pip install wheel
         if: matrix.os == 'windows-latest'
-      - name: Build and install package
-        uses: pypa/build@v1
-        with:
-          publish: true
-
-      - name: Install package
-        uses: pypa/installer@v1
-        with:
-          wheel-ref: dist/*.whl
+      - name: Test packages
+        run: |
+          python setup.py install
+          geeup -h
