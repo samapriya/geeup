@@ -32,5 +32,12 @@ jobs:
           pip install wheel
           python setup.py sdist bdist_wheel
           cd dist
-          pip install dist/*.whl
+      - name: List wheel files
+        run: |
+          for file in dist/*.whl; do
+            echo "Installing $file..."
+            pip install "$file"
+          done
+      - name: test pkg
+        run: |
           geeup -h
