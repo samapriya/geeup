@@ -1,5 +1,8 @@
 # Changelog
 
+### 1.0.0
+- Updated runtime and readme for actions
+
 ### 0.6.5
 - Fixed issue with iteritems for pandas >2.0.0
 - Updated task running check and updated function
