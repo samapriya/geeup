@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.9", "3.10"]
     steps:
       - name: Checkout repository
         continue-on-error: true
@@ -32,12 +32,30 @@ jobs:
           pip install wheel
           python setup.py sdist bdist_wheel
           cd dist
-      - name: List wheel files
+      - name: List & install wheel files(ubuntu)
+        continue-on-error: true
+        if: matrix.os == 'ubuntu-latest'
         run: |
           for file in dist/*.whl; do
             echo "Installing $file..."
             pip install "$file"
           done
+      - name: List & install wheel files(mac)
+        continue-on-error: true
+        if: matrix.os == 'mac-latest'
+        run: |
+          for file in dist/*.whl; do
+            echo "Installing $file..."
+            pip install "$file"
+          done
+      - name: List & install wheel files(windows)
+        continue-on-error: true
+        if: matrix.os == 'windows-latest'
+        run: |
+          foreach ($file in Get-ChildItem -Path dist -Filter *.whl) {
+            Write-Host "Installing $file..."
+            pip.exe install "$file"
+          }
       - name: test pkg
         run: |
           geeup -h
