@@ -25,7 +25,7 @@ setuptools.setup(
         "requests >= 2.10.0",
         "retrying >= 1.3.3",
         "natsort >= 8.1.0",
-        "pandas>=2.1.1",
+        "pandas",
         "psutil>=5.4.5",
         "cerberus>=1.3.4",
         "requests_toolbelt >= 0.7.0",
