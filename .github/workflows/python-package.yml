@@ -35,8 +35,12 @@ jobs:
           pip install -U pip setuptools
           pip install wheel
         if: matrix.os == 'windows-latest'
-      - name: Test package
-        run: |
-          pip install --upgrade pip
-          python setup.py install
-          geeup -h
+      - name: Build and install package
+        uses: pypa/build@v1
+        with:
+          publish: true
+
+      - name: Install package
+        uses: pypa/installer@v1
+        with:
+          wheel-ref: dist/*.whl
