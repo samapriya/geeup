@@ -28,5 +28,9 @@ jobs:
       - name: Test packages
         continue-on-error: true
         run: |
-          python setup.py install
+          pip install setuptools
+          pip install wheel
+          python setup.py sdbist bdist_wheel
+          cd dist/*
+          pip install --no-index --find-links=dist/*.whl
           geeup -h
