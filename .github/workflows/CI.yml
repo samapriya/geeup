@@ -30,7 +30,7 @@ jobs:
         run: |
           pip install setuptools
           pip install wheel
-          python setup.py sdbist bdist_wheel
+          python setup.py sdist bdist_wheel
           cd dist/*
           pip install --no-index --find-links=dist/*.whl
           geeup -h
