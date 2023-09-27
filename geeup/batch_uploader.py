@@ -81,8 +81,7 @@ def upload(
     nodata_value=None,
     overwrite=None,
 ):
-    schema = {"collection_path": {
-        "type": "string", "regex": "^[a-zA-Z0-9/_-]+$"}}
+    schema = {"collection_path": {"type": "string", "regex": "^[a-zA-Z0-9/_-]+$"}}
     collection_validate = {"collection_path": destination_path}
     v = Validator(schema, error_handler=CustomErrorHandler(schema))
     if v.validate(collection_validate, schema) is False:
@@ -141,8 +140,7 @@ def upload(
         properties = metadata[filename] if metadata else None
         try:
             if user is not None:
-                gsid = __upload_file_gee(
-                    session=google_session, file_path=image_path)
+                gsid = __upload_file_gee(session=google_session, file_path=image_path)
 
             df = pd.read_csv(metadata_path)
             dd = (df.applymap(type) == str).all(0)
@@ -198,7 +196,7 @@ def upload(
                             "end_time": {"seconds": ""},
                             "properties": j,
                             "missing_data": {"values": [nodata_value]},
-                            "maskBands": {"bandIds": [], "tilesetId": ''}
+                            "maskBands": {"bandIds": [], "tilesetId": ""},
                         }
                         if start is not None:
                             main_payload["start_time"]["seconds"] = start
@@ -221,19 +219,20 @@ def upload(
                             }
                         }
                         asset_validate = {"asset_path": asset_full_path}
-                        v = Validator(
-                            schema, error_handler=CustomErrorHandler(schema))
+                        v = Validator(schema, error_handler=CustomErrorHandler(schema))
                         if v.validate(asset_validate, schema) is False:
                             print(v.errors)
                             raise Exception
                         request_id = ee.data.newTaskId()[0]
-                        check_list = ['yes', 'y']
+                        check_list = ["yes", "y"]
                         if overwrite is not None and overwrite.lower() in check_list:
                             output = ee.data.startIngestion(
-                                request_id, main_payload, allow_overwrite=True)
+                                request_id, main_payload, allow_overwrite=True
+                            )
                         else:
                             output = ee.data.startIngestion(
-                                request_id, main_payload, allow_overwrite=False)
+                                request_id, main_payload, allow_overwrite=False
+                            )
                         logging.info(
                             f"Ingesting {current_image_no+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output['id']} & status {output['started']}"
                         )
@@ -245,10 +244,9 @@ def upload(
 
 
 def __find_remaining_assets_for_upload(path_to_local_assets, path_remote, overwrite):
-    local_assets = [__get_filename_from_path(
-        path) for path in path_to_local_assets]
+    local_assets = [__get_filename_from_path(path) for path in path_to_local_assets]
     if __collection_exist(path_remote):
-        check_list = ['yes', 'y']
+        check_list = ["yes", "y"]
         if overwrite is not None and overwrite.lower() in check_list:
             return path_to_local_assets
         else:
@@ -334,11 +332,9 @@ def __get_google_auth_session(username):
             cookie_list = cookie_list
         elif cookie_check(cookie_list) is False:
             try:
-                cookie_list = raw_input(
-                    "Cookies Expired | Enter your Cookie List:  ")
+                cookie_list = raw_input("Cookies Expired | Enter your Cookie List:  ")
             except Exception:
-                cookie_list = input(
-                    "Cookies Expired | Enter your Cookie List:  ")
+                cookie_list = input("Cookies Expired | Enter your Cookie List:  ")
             finally:
                 with open("cookie_jar.json", "w") as outfile:
                     json.dump(json.loads(cookie_list), outfile)
@@ -357,8 +353,7 @@ def __get_google_auth_session(username):
     session = requests.Session()
     for cookies in cookie_list:
         session.cookies.set(cookies["name"], cookies["value"])
-    response = session.get(
-        "https://code.earthengine.google.com/assets/upload/geturl")
+    response = session.get("https://code.earthengine.google.com/assets/upload/geturl")
     if (
         response.status_code == 200
         and ast.literal_eval(response.text)["url"] is not None
@@ -421,8 +416,7 @@ def __create_image_collection(full_path_to_collection):
     if __collection_exist(full_path_to_collection):
         print("Collection " + str(full_path_to_collection) + " already exists")
     else:
-        print("Collection does not exist: Creating {}".format(
-            full_path_to_collection))
+        print("Collection does not exist: Creating {}".format(full_path_to_collection))
         try:
             ee.data.createAsset(
                 {"type": ee.data.ASSET_TYPE_IMAGE_COLL_CLOUD}, full_path_to_collection

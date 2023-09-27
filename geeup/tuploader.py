@@ -94,11 +94,9 @@ def get_auth_session(uname):
             cookie_list = cookie_list
         elif cookie_check(cookie_list) is False:
             try:
-                cookie_list = raw_input(
-                    "Cookies Expired | Enter your Cookie List:  ")
+                cookie_list = raw_input("Cookies Expired | Enter your Cookie List:  ")
             except Exception:
-                cookie_list = input(
-                    "Cookies Expired | Enter your Cookie List:  ")
+                cookie_list = input("Cookies Expired | Enter your Cookie List:  ")
             finally:
                 with open("cookie_jar.json", "w") as outfile:
                     json.dump(json.loads(cookie_list), outfile)
@@ -117,8 +115,7 @@ def get_auth_session(uname):
     session = requests.Session()
     for cookies in cookie_list:
         session.cookies.set(cookies["name"], cookies["value"])
-    response = session.get(
-        "https://code.earthengine.google.com/assets/upload/geturl")
+    response = session.get("https://code.earthengine.google.com/assets/upload/geturl")
     if (
         response.status_code == 200
         and ast.literal_eval(response.text)["url"] is not None
@@ -130,15 +127,14 @@ def get_auth_session(uname):
 
 def tabup(dirc, uname, destination, x, y, overwrite=None):
     ee.Initialize()
-    schema = {"folder_path": {
-        "type": "string", "regex": "^[a-zA-Z0-9/_-]+$"}}
+    schema = {"folder_path": {"type": "string", "regex": "^[a-zA-Z0-9/_-]+$"}}
     folder_validate = {"folder_path": destination}
     v = Validator(schema, error_handler=CustomErrorHandler(schema))
     if v.validate(folder_validate, schema) is False:
         sys.exit(v.errors)
 
     session = get_auth_session(uname)
-    for (root, directories, files) in os.walk(dirc):
+    for root, directories, files in os.walk(dirc):
         for filename in files:
             if filename.endswith(".zip"):
                 table_exists.append(filename.split(".zip")[0])
@@ -183,12 +179,13 @@ def tabup(dirc, uname, destination, x, y, overwrite=None):
                 .split("/")[-1]
                 .replace('"', "")
             )
-    check_list = ['yes', 'y']
+    check_list = ["yes", "y"]
     if overwrite is not None and overwrite.lower() in check_list:
         diff_set = set(table_exists)
     else:
         diff_set = set(table_exists).difference(
-            set(gee_table_exists), set(tasked_assets))
+            set(gee_table_exists), set(tasked_assets)
+        )
     if len(diff_set) > 0:
         print(
             f"Total of {len(diff_set)} assets remaining : Total of {len(set(gee_table_exists))} already in folder with {len(set(tasked_assets))} associated tasks running or submitted"
@@ -219,8 +216,7 @@ def tabup(dirc, uname, destination, x, y, overwrite=None):
                 for i, item in enumerate(natsorted(diff_set)):
                     full_path_to_table = os.path.join(root, item + base_ext)
                     file_name = item + base_ext
-                    file_name = bytes(
-                        file_name, "utf-8").decode("utf-8", "ignore")
+                    file_name = bytes(file_name, "utf-8").decode("utf-8", "ignore")
                     r = session.get(
                         "https://code.earthengine.google.com/assets/upload/geturl"
                     )
@@ -262,20 +258,25 @@ def tabup(dirc, uname, destination, x, y, overwrite=None):
                                         "regex": "^[a-zA-Z0-9/_-]+$",
                                     }
                                 }
-                                asset_validate = {
-                                    "asset_path": asset_full_path}
+                                asset_validate = {"asset_path": asset_full_path}
                                 v = Validator(
-                                    schema, error_handler=CustomErrorHandler(schema))
+                                    schema, error_handler=CustomErrorHandler(schema)
+                                )
                                 if v.validate(asset_validate, schema) is False:
                                     print(v.errors)
                                     raise Exception
                                 request_id = ee.data.newTaskId()[0]
-                                if overwrite is not None and overwrite.lower() in check_list:
+                                if (
+                                    overwrite is not None
+                                    and overwrite.lower() in check_list
+                                ):
                                     output = ee.data.startTableIngestion(
-                                        request_id, main_payload, allow_overwrite=True)
+                                        request_id, main_payload, allow_overwrite=True
+                                    )
                                 else:
                                     output = ee.data.startTableIngestion(
-                                        request_id, main_payload, allow_overwrite=False)
+                                        request_id, main_payload, allow_overwrite=False
+                                    )
                                 logging.info(
                                     f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output['id']} & status {output['started']}"
                                 )
@@ -290,8 +291,7 @@ def tabup(dirc, uname, destination, x, y, overwrite=None):
                                 )
                                 gsid = resp.json()[0]
                                 asset_full_path = (
-                                    full_path_to_collection +
-                                    "/" + item.split(".")[0]
+                                    full_path_to_collection + "/" + item.split(".")[0]
                                 )
                                 if x and y is not None:
                                     main_payload = {
@@ -323,20 +323,25 @@ def tabup(dirc, uname, destination, x, y, overwrite=None):
                                         "regex": "^[a-zA-Z0-9/_-]+$",
                                     }
                                 }
-                                asset_validate = {
-                                    "asset_path": asset_full_path}
+                                asset_validate = {"asset_path": asset_full_path}
                                 v = Validator(
-                                    schema, error_handler=CustomErrorHandler(schema))
+                                    schema, error_handler=CustomErrorHandler(schema)
+                                )
                                 if v.validate(asset_validate, schema) is False:
                                     print(v.errors)
                                     raise Exception
                                 request_id = ee.data.newTaskId()[0]
-                                if overwrite is not None and overwrite.lower() in check_list:
+                                if (
+                                    overwrite is not None
+                                    and overwrite.lower() in check_list
+                                ):
                                     output = ee.data.startTableIngestion(
-                                        request_id, main_payload, allow_overwrite=True)
+                                        request_id, main_payload, allow_overwrite=True
+                                    )
                                 else:
                                     output = ee.data.startTableIngestion(
-                                        request_id, main_payload, allow_overwrite=False)
+                                        request_id, main_payload, allow_overwrite=False
+                                    )
                                 logging.info(
                                     f"Ingesting {i+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output['id']} & status {output['started']}"
                                 )
