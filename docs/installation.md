@@ -1,24 +1,31 @@
 # Prerequisites and Installation
-This assumes that you have native python & pip installed in your system, you can test this by going to the terminal (or windows command prompt) and trying
+We assume Earth Engine Python API is installed and EE initialized as desribed [here](https://developers.google.com/earth-engine/python_install). From v0.3.4 onwards geeup will only run on Python 3. Also with the new changes to the Earth Engine API library, the tool was completely modified to work with earthengine-api v0.1.127 and higher. Authenticate your earth engine client by using the following in your command line or terminal setup.
 
-```python``` and then ```pip list```
-
-**geeup now only support Python v3.4 or higher from geeup version 0.3.3**
-
-
-**This also needs earthengine cli to be [installed and authenticated on your system](https://developers.google.com/earth-engine/python_install_manual) and earthengine to be callable in your command line or terminal**
-
-To install **geeup: Simple CLI for Earth Engine Uploads** you can install using two methods.
-
-```pip install geeup```
-
-or you can also try
+<b>
 
 ```
-git clone https://github.com/samapriya/geeup.git
-cd geeup
-python setup.py install
+earthengine authenticate
 ```
-For Linux use sudo or try ```pip install geeup --user```.
 
-I recommend installation within a virtual environment. Find more information on [creating virtual environments here](https://docs.python.org/3/library/venv.html).
+</b>
+
+Quick installation
+
+```
+pip install geeup
+
+pip install geeup --user
+```
+
+
+To get always fresh install using GitHub (**This could be a staging version and will include a pop up on top to remind you of that**)
+
+<b>
+
+```
+pip install git+https://github.com/samapriya/geeup.git
+```
+
+</b>
+
+The advantage of having it installed is being able to execute geeup as any command line tool. I recommend installation within virtual environment.

@@ -8,12 +8,13 @@ repo_name: geeup
 repo_url: https://github.com/samapriya/geeup
 
 # Copyright
-copyright: "Copyright &copy; 2022 - 2023 Samapriya Roy"
+copyright: "Copyright &copy; 2023 - 2024 Samapriya Roy"
 
 # Configuration
 theme:
   name: "material"
   features:
+    - announce.dismiss
     - content.action.edit
     - content.action.view
     - content.code.annotate
@@ -36,13 +37,13 @@ theme:
   language: en
   palette:
     - scheme: default
-      primary: yellow
-      accent: indigo
+      primary: purple
+      accent: green
       toggle:
         icon: material/toggle-switch-off-outline
         name: Switch to dark mode
     - scheme: slate
-      primary: red
+      primary: teal
       accent: red
       toggle:
         icon: material/toggle-switch
@@ -67,9 +68,6 @@ extra:
       link: https://twitter.com/samapriyaroy
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/in/samapriya
-
-extra_css:
-  - stylesheets/extra.css
 
 plugins:
   - search
@@ -100,6 +98,9 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
+      options:
+        custom_icons:
+          - overrides/.icons
   - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.keys
@@ -121,21 +122,20 @@ markdown_extensions:
 
 # Page tree
 nav:
-  - Introduction: index.md
+  - geeup Simple CLI for Earth Engine Uploads: index.md
   - License: license.md
-  - General Installation: installation.md
+  - Prerequisites and Installation: installation.md
   - Setup tools:
-      - GEE authenticate: projects/ee_init.md
-      - Cookies Setup: projects/cookies_setup.md
+      - Cookie Setup tool: projects/cookies_setup.md
       - Quota tool: projects/quota.md
   - Upload tools:
-      - Get Metadata: projects/get_metadata.md
-      - geeup Rename: projects/rename.md
-      - Zip Shapefiles: projects/zipshape.md
-      - Image Upload: projects/image_upload.md
-      - Table Upload: projects/table_upload.md
+      - Get Metadata tool: projects/get_metadata.md
+      - Rename tool: projects/rename.md
+      - Zip Shapefiles tool: projects/zipshape.md
+      - Image Upload tool: projects/image_upload.md
+      - Table Upload tool: projects/table_upload.md
   - Additional tools:
-      - Task status: projects/task_status.md
-      - Cancel tasks: projects/cancel_tasks.md
-      - Delete assets: projects/delete.md
+      - Tasks tool: projects/task_status.md
+      - Cancel Tasks tool: projects/cancel_tasks.md
+      - Delete Assets tool: projects/delete.md
   - Changelog: changelog.md
