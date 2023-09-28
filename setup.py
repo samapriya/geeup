@@ -16,7 +16,6 @@ setup(
     install_requires=[
         "pandas==2.0.3",
         "earthengine-api>=0.1.370",
-        "logzero>=1.5.0",
         "requests>=2.10.0",
         "retrying>=1.3.3",
         "natsort>=8.1.0",
