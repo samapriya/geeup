@@ -68,6 +68,9 @@ extra:
       link: https://twitter.com/samapriyaroy
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/in/samapriya
+  analytics:
+    provider: google
+    property: G-N4RTMQ93YP
 
 plugins:
   - search
