@@ -9,7 +9,7 @@ def readme():
 
 setup(
     name="geeup",
-    version="1.0.0",
+    version="1.0.1",
     python_requires=">=3.6",
     packages=find_packages(),
     url="https://github.com/samapriya/geeup",

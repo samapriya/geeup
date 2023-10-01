@@ -460,7 +460,7 @@ def tasks(state, id):
         for status in statuses:
             st.append(status["state"])
         print(f"Tasks Running: {st.count('RUNNING')}")
-        print(f"Tasks Pending: {st.count('PENDING')}")
+        print(f"Tasks Pending: {st.count('READY')}")
         print(f"Tasks Completed: {st.count('COMPLETED')+st.count('SUCCEEDED')}")
         print(f"Tasks Failed: {st.count('FAILED')}")
         print(f"Tasks Cancelled: {st.count('CANCELLED') + st.count('CANCELLING')}")
@@ -473,7 +473,7 @@ def cancel_tasks(tasks):
             all_tasks = [
                 task
                 for task in ee.data.getTaskList()
-                if task["state"] == "RUNNING" or task["state"] == "PENDING"
+                if task["state"] == "RUNNING" or task["state"] == "READY"
             ]
             if len(all_tasks) > 0:
                 for i, task in enumerate(all_tasks):
@@ -515,7 +515,7 @@ def cancel_tasks(tasks):
         try:
             print("Attempting to cancel queued tasks or pending tasks")
             ready_tasks = [
-                task for task in ee.data.getTaskList() if task["state"] == "PENDING"
+                task for task in ee.data.getTaskList() if task["state"] == "READY"
             ]
             if len(ready_tasks) > 0:
                 for i, task in enumerate(ready_tasks):
@@ -540,7 +540,7 @@ def cancel_tasks(tasks):
             task_list = [task for task in ee.data.getTaskList() if task["id"] == tasks]
             if task_list:
                 for task in task_list:
-                    if task["state"] == "RUNNING" or task["state"] == "PENDING":
+                    if task["state"] == "RUNNING" or task["state"] == "READY":
                         ee.data.cancelTask(task["id"])
                         print(
                             "Request completed with task ID or task type: {} cancelled".format(
@@ -777,12 +777,12 @@ def main(args=None):
 
     parser_tasks = subparsers.add_parser(
         "tasks",
-        help="Queries current task status [completed,running,pending,failed,cancelled]",
+        help="Queries current task status [completed,running,ready,failed,cancelled]",
     )
     optional_named = parser_tasks.add_argument_group("Optional named arguments")
     optional_named.add_argument(
         "--state",
-        help="Query by state type COMPLETED|PENDING|RUNNING|FAILED",
+        help="Query by state type COMPLETED|READY|RUNNING|FAILED",
     )
     optional_named.add_argument(
         "--id",
