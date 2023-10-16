@@ -13,6 +13,7 @@ copyright: "Copyright &copy; 2023 - 2024 Samapriya Roy"
 # Configuration
 theme:
   name: "material"
+  custom_dir: overrides
   features:
     - announce.dismiss
     - content.action.edit
