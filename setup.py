@@ -26,6 +26,7 @@ setup(
         "pathlib>=1.0.1",
         "lxml>=4.1.1",
         "oauth2client>=4.1.3",
+        "numpy<2"
     ],
     license="Apache 2.0",
     long_description=readme(),
