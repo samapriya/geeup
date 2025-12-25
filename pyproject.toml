@@ -1,0 +1,93 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "geeup"
+version = "2.0.0"
+description = "Simple Client for Earth Engine Uploads"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Samapriya Roy", email = "samapriya.roy@gmail.com"}
+]
+keywords = ["earth engine", "gee", "upload", "raster", "vector", "geospatial"]
+classifiers = [
+    "Development Status :: 6 - Mature",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+dependencies = [
+    "earthengine-api>=0.1.370",
+    "requests>=2.31.0",
+    "requests-toolbelt>=1.0.0",
+    "urllib3>=2.0.0",
+    "pydantic>=2.0.0",
+    "rich>=13.0.0",
+    "tqdm>=4.65.0",
+    "packaging>=23.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/samapriya/geeup"
+Documentation = "https://geeup.geetools.xyz/"
+Repository = "https://github.com/samapriya/geeup"
+Issues = "https://github.com/samapriya/geeup/issues"
+
+[project.scripts]
+geeup = "geeup.geeup:main"
+
+[tool.setuptools]
+packages = ["geeup"]
+
+[tool.setuptools.package-data]
+geeup = ["py.typed"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310", "py311", "py312"]
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501", # line too long (handled by black)
+    "B008", # do not perform function calls in argument defaults
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=geeup --cov-report=term-missing"

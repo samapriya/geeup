@@ -1,13 +1,15 @@
-wheel
-pandas==2.0.3
-earthengine_api>=0.1.274
-requests >= 2.22.0
-cerberus>=1.3.4
-retrying >= 1.3.3
-natsort >= 8.1.0
-requests_toolbelt >= 0.7.0
-pytest >= 3.0.0
-future >= 0.16.0
-psutil>=5.4.5
-pathlib>=1.0.1
-lxml>=4.1.1
+# Core dependencies
+earthengine-api>=0.1.370
+requests>=2.31.0
+requests-toolbelt>=1.0.0
+urllib3>=2.0.0
+pydantic>=2.0.0
+rich>=13.0.0
+tqdm>=4.65.0
+packaging>=23.0
+
+# Optional: Development dependencies
+# pytest>=7.0.0
+# pytest-cov>=4.0.0
+# black>=23.0.0
+# ruff>=0.1.0

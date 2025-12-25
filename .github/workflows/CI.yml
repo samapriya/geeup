@@ -1,61 +1,95 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
 name: CI geeup
 
 on:
   push:
-    branches: [master]
+    branches: [master, main]
   pull_request:
-    branches: [master]
+    branches: [master, main]
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-        python-version: ["3.9", "3.10"]
+        python-version: ["3.10", "3.11", "3.12"]
+
     steps:
       - name: Checkout repository
-        continue-on-error: true
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
-            python-version: ${{ matrix.python-version }}
-      - name: Create whl files
-        continue-on-error: true
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install build dependencies
         run: |
-          pip install setuptools
-          pip install wheel
-          python setup.py sdist bdist_wheel
-          cd dist
-      - name: List & install wheel files(ubuntu)
-        continue-on-error: true
-        if: matrix.os == 'ubuntu-latest'
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools
+
+      - name: Build package
         run: |
-          for file in dist/*.whl; do
-            echo "Installing $file..."
-            pip install "$file"
-          done
-      - name: List & install wheel files(mac)
-        continue-on-error: true
-        if: matrix.os == 'macos-latest'
+          python -m build
+
+      - name: Install package (Unix)
+        if: matrix.os != 'windows-latest'
         run: |
           for file in dist/*.whl; do
             echo "Installing $file..."
             pip install "$file"
           done
-      - name: List & install wheel files(windows)
-        continue-on-error: true
+
+      - name: Install package (Windows)
         if: matrix.os == 'windows-latest'
+        shell: pwsh
         run: |
-          foreach ($file in Get-ChildItem -Path dist -Filter *.whl) {
-            Write-Host "Installing $file..."
-            pip.exe install "$file"
+          Get-ChildItem -Path dist -Filter *.whl | ForEach-Object {
+            Write-Host "Installing $_..."
+            pip install $_.FullName
           }
-      - name: test pkg
+
+      - name: Test package installation
         run: |
           geeup -h
+
+      - name: Run basic import test
+        run: |
+          python -c "import geeup; from geeup.auth import initialize_ee; from geeup.batch_uploader import BatchUploader"
+
+      - name: Upload wheel artifacts
+        uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        with:
+          name: wheels
+          path: dist/*.whl
+          retention-days: 7
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install linting dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black
+
+      - name: Run ruff
+        run: |
+          ruff check geeup/
+
+      - name: Run black check
+        run: |
+          black --check geeup/

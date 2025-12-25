@@ -1,433 +1,857 @@
-from __future__ import print_function
-
-__copyright__ = """
-
-    Copyright 2023 Samapriya Roy
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
 """
-__license__ = "Apache 2.0"
+Modernized batch uploader for Google Earth Engine assets.
 
-import ast
-import csv
-import glob
+Licensed under the Apache License, Version 2.0
+"""
+
 import json
 import logging
 import os
-import platform
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import asdict, dataclass
+from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Optional, Set, Tuple
 
 import ee
-import pandas as pd
 import requests
-import retrying
-from cerberus import Validator
-from cerberus.errors import BasicErrorHandler
-from natsort import natsorted
-from requests_toolbelt import MultipartEncoder
+from requests.adapters import HTTPAdapter
+from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
+from tqdm import tqdm
+from urllib3.util.retry import Retry
 
-from .metadata_loader import load_metadata_from_csv
+from .metadata_loader import MetadataCollection
 
-os.chdir(os.path.dirname(os.path.realpath(__file__)))
-lp = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(lp)
-
-
-slist = []
-
-
-class CustomErrorHandler(BasicErrorHandler):
-    def __init__(self, schema):
-        self.custom_defined_schema = schema
-
-    def _format_message(self, field, error):
-        print("")
-        return "GEE file name & path cannot have spaces & can only have letters, numbers, hyphens and underscores"
+# Configure logging
+logging.basicConfig(
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    level=logging.INFO,
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 
-def task_counter():
-    ee.Initialize()
-    status = ["RUNNING", "PENDING"]
-    task_count = len(
-        [
-            task
-            for task in ee.data.listOperations()
-            if task["metadata"]["state"] in status
-        ]
-    )
-    return task_count
+class AssetState(Enum):
+    """Asset upload states for tracking."""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+
+
+class TaskState(Enum):
+    """Earth Engine task states."""
+
+    RUNNING = "RUNNING"
+    PENDING = "PENDING"
+    READY = "READY"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+
+@dataclass
+class UploadState:
+    """Track upload progress for resumability."""
+
+    assets: Dict[str, str]  # filename -> state
+    failed_reasons: Dict[str, str]  # filename -> error message
+    timestamp: float
+    collection_path: str
+
+    def to_dict(self):
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        return cls(**data)
+
+    def save(self, state_file: Path):
+        """Save state to disk."""
+        with open(state_file, "w") as f:
+            json.dump(self.to_dict(), f, indent=2)
+
+    @classmethod
+    def load(cls, state_file: Path):
+        """Load state from disk."""
+        if not state_file.exists():
+            return None
+        with open(state_file, "r") as f:
+            return cls.from_dict(json.load(f))
+
+
+class PathValidator:
+    """Validate GEE paths and filenames."""
+
+    VALID_CHARS = r"^[a-zA-Z0-9/_-]+$"
+
+    @staticmethod
+    def validate_path(path: str) -> Tuple[bool, Optional[str]]:
+        """Validate a GEE path."""
+        import re
+
+        if not re.match(PathValidator.VALID_CHARS, path):
+            return False, (
+                "GEE path cannot have spaces and can only contain "
+                "letters, numbers, hyphens, underscores, and forward slashes"
+            )
+        return True, None
+
+
+class SessionManager:
+    """Manage Google authentication sessions with retry logic."""
+
+    COOKIE_FILE = Path("cookie_jar.json")
+
+    def __init__(self):
+        self.session = self._create_session_with_retry()
+        self._url_lock = __import__("threading").Lock()
+
+    def _create_session_with_retry(self) -> requests.Session:
+        """Create a session with automatic retry logic."""
+        session = requests.Session()
+        retry_strategy = Retry(
+            total=3,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["HEAD", "GET", "POST"],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        return session
+
+    def load_cookies(self) -> bool:
+        """Load and validate cookies."""
+        if not self.COOKIE_FILE.exists():
+            return self._prompt_for_cookies()
+
+        with open(self.COOKIE_FILE, "r") as f:
+            cookie_list = json.load(f)
+
+        if self._validate_cookies(cookie_list):
+            logger.info("Using saved cookies")
+            self._set_cookies(cookie_list)
+            return True
+        else:
+            logger.warning("Saved cookies expired")
+            return self._prompt_for_cookies()
+
+    def _validate_cookies(self, cookie_list: list) -> bool:
+        """Check if cookies are still valid."""
+        test_session = requests.Session()
+        for cookie in cookie_list:
+            test_session.cookies.set(cookie["name"], cookie["value"])
+
+        try:
+            response = test_session.get(
+                "https://code.earthengine.google.com/assets/upload/geturl", timeout=10
+            )
+            return (
+                response.status_code == 200
+                and "application/json" in response.headers.get("content-type", "")
+            )
+        except requests.RequestException:
+            return False
+
+    def _prompt_for_cookies(self) -> bool:
+        """Prompt user for cookie list."""
+        try:
+            cookie_input = input("Enter your Cookie List: ")
+            cookie_list = json.loads(cookie_input)
+
+            with open(self.COOKIE_FILE, "w") as f:
+                json.dump(cookie_list, f, indent=2)
+
+            self._set_cookies(cookie_list)
+            self._clear_screen()
+            return True
+        except (json.JSONDecodeError, KeyboardInterrupt) as e:
+            logger.error(f"Failed to load cookies: {e}")
+            return False
+
+    def _set_cookies(self, cookie_list: list):
+        """Set cookies in session."""
+        for cookie in cookie_list:
+            self.session.cookies.set(cookie["name"], cookie["value"])
+
+    @staticmethod
+    def _clear_screen():
+        """Clear terminal screen."""
+        os.system("cls" if os.name == "nt" else "clear")
+        # Reset terminal settings on Unix
+        if sys.platform in ["linux", "darwin"]:
+            subprocess.run(["stty", "icanon"], check=False)
+
+    def get_upload_url(self) -> Optional[str]:
+        """Get GCS upload URL. Thread-safe for concurrent calls."""
+        with self._url_lock:
+            try:
+                response = self.session.get(
+                    "https://code.earthengine.google.com/assets/upload/geturl",
+                    timeout=10,
+                )
+                return response.json().get("url")
+            except (requests.RequestException, json.JSONDecodeError, KeyError) as e:
+                logger.error(f"Failed to get upload URL: {e}")
+                return None
+
+
+class EETaskManager:
+    """Manage Earth Engine tasks."""
+
+    def __init__(self):
+        ee.Initialize()
+
+    def get_task_count(self, states: Optional[List[TaskState]] = None) -> int:
+        """Count tasks in specified states."""
+        if states is None:
+            states = [TaskState.RUNNING, TaskState.PENDING]
+
+        state_names = [s.value for s in states]
+        operations = ee.data.listOperations()
+
+        return sum(
+            1
+            for task in operations
+            if task.get("metadata", {}).get("state") in state_names
+        )
+
+    def get_ingestion_tasks(self, collection_path: str) -> Set[str]:
+        """Get asset names with pending/running ingestion tasks."""
+        tasks = set()
+        for task in ee.data.listOperations():
+            metadata = task.get("metadata", {})
+            if metadata.get("type") == "INGEST_IMAGE" and metadata.get("state") in [
+                TaskState.RUNNING.value,
+                TaskState.PENDING.value,
+            ]:
+                desc = metadata.get("description", "")
+                # Extract asset name from description
+                if desc:
+                    asset_name = desc.split(":")[-1].split("/")[-1].replace('"', "")
+                    tasks.add(asset_name)
+        return tasks
+
+    def wait_for_capacity(self, max_tasks: int = 2800, check_interval: int = 300):
+        """Wait until task count is below threshold."""
+        task_count = self.get_task_count()
+        while task_count >= max_tasks:
+            logger.info(
+                f"Task limit reached ({task_count}/{max_tasks}). "
+                f"Waiting {check_interval}s..."
+            )
+            time.sleep(check_interval)
+            task_count = self.get_task_count()
+
+
+class CollectionManager:
+    """Manage Earth Engine image collections."""
+
+    def __init__(self):
+        ee.Initialize()
+
+    def exists(self, path: str) -> bool:
+        """Check if collection exists."""
+        try:
+            return ee.data.getInfo(path) is not None
+        except ee.EEException:
+            return False
+
+    def create(self, path: str):
+        """Create image collection if it doesn't exist."""
+        if self.exists(path):
+            logger.info(f"Collection already exists: {path}")
+            return
+
+        logger.info(f"Creating collection: {path}")
+        try:
+            ee.data.createAsset({"type": ee.data.ASSET_TYPE_IMAGE_COLL_CLOUD}, path)
+        except Exception:
+            # Fallback for older EE versions
+            ee.data.createAsset({"type": ee.data.ASSET_TYPE_IMAGE_COLL}, path)
+
+    def list_assets(self, path: str) -> Set[str]:
+        """List asset names in collection."""
+        try:
+            assets = ee.data.getList(params={"id": path})
+            return {Path(asset["id"]).name for asset in assets}
+        except ee.EEException:
+            return set()
+
+
+class BatchUploader:
+    """Main batch uploader class."""
+
+    # Valid pyramiding policies
+    VALID_PYRAMIDING = ["MEAN", "MODE", "MIN", "MAX", "SAMPLE"]
+
+    def __init__(
+        self,
+        source_path: Path,
+        destination_path: str,
+        metadata_path: Optional[Path] = None,
+        pyramiding: str = "MEAN",
+        nodata_value: Optional[float] = None,
+        mask: bool = False,
+        overwrite: bool = False,
+        dry_run: bool = False,
+        workers: int = 1,
+        max_inflight_tasks: int = 2800,
+        resume: bool = False,
+        retry_failed: bool = False,
+        show_progress: bool = True,
+    ):
+        self.source_path = Path(source_path)
+        self.destination_path = destination_path
+        self.metadata_path = Path(metadata_path) if metadata_path else None
+
+        # Validate and normalize pyramiding policy
+        pyramiding_upper = pyramiding.upper()
+        if pyramiding_upper not in self.VALID_PYRAMIDING:
+            raise ValueError(
+                f"Invalid pyramiding policy: {pyramiding}. "
+                f"Must be one of: {', '.join(self.VALID_PYRAMIDING)}"
+            )
+        self.pyramiding = pyramiding_upper
+
+        self.nodata_value = nodata_value
+        self.mask = mask
+        self.overwrite = overwrite
+        self.dry_run = dry_run
+        self.workers = workers
+        self.max_inflight_tasks = max_inflight_tasks
+        self.resume = resume
+        self.retry_failed = retry_failed
+        self.show_progress = show_progress
+
+        self.state_file = self.source_path / ".geeup-state.json"
+        self.metadata_collection = None
+
+        # Initialize managers
+        self.task_manager = EETaskManager()
+        self.collection_manager = CollectionManager()
+        self.session_manager = None if dry_run else SessionManager()
+
+    def validate(self) -> Tuple[bool, List[str]]:
+        """Validate configuration before upload."""
+        errors = []
+
+        # Validate destination path
+        valid, error = PathValidator.validate_path(self.destination_path)
+        if not valid:
+            errors.append(f"Invalid destination path: {error}")
+
+        # Validate source path
+        if not self.source_path.exists():
+            errors.append(f"Source path does not exist: {self.source_path}")
+
+        # Find images
+        images = list(self.source_path.glob("*.tif"))
+        if not images:
+            errors.append(f"No .tif images found in: {self.source_path}")
+
+        # Validate and load metadata
+        if self.metadata_path:
+            if not self.metadata_path.exists():
+                errors.append(f"Metadata file not found: {self.metadata_path}")
+            else:
+                try:
+                    # Use MetadataCollection for validation
+                    self.metadata_collection = MetadataCollection.from_csv(
+                        self.metadata_path
+                    )
+
+                    # Check for missing metadata
+                    image_names = {img.stem for img in images}
+                    missing = self.metadata_collection.validate_all_assets_present(
+                        image_names
+                    )
+
+                    if missing:
+                        errors.append(
+                            f"Missing metadata for {len(missing)} images. "
+                            f"Examples: {', '.join(list(missing)[:5])}"
+                        )
+
+                    # Check for extra metadata (warning only)
+                    metadata_names = set(self.metadata_collection.entries.keys())
+                    extra = metadata_names - image_names
+                    if extra:
+                        logger.warning(
+                            f"Metadata exists for {len(extra)} images not in source. "
+                            f"Examples: {', '.join(list(extra)[:5])}"
+                        )
+
+                except Exception as e:
+                    errors.append(f"Failed to load metadata: {e}")
+
+        return len(errors) == 0, errors
+
+    def estimate_quota(self) -> dict:
+        """Estimate quota impact."""
+        images = list(self.source_path.glob("*.tif"))
+        total_size = sum(img.stat().st_size for img in images)
+
+        return {
+            "total_images": len(images),
+            "total_size_bytes": total_size,
+            "total_size_mb": round(total_size / 1024 / 1024, 2),
+            "total_size_gb": round(total_size / 1024 / 1024 / 1024, 2),
+        }
+
+    def print_dry_run_summary(self):
+        """Print summary for dry run."""
+        logger.info("=" * 60)
+        logger.info("DRY RUN - No changes will be made")
+        logger.info("=" * 60)
+
+        valid, errors = self.validate()
+
+        if not valid:
+            logger.error("Validation failed:")
+            for error in errors:
+                logger.error(f"  - {error}")
+            return False
+
+        logger.info("✓ Validation passed")
+        logger.info("")
+
+        # Get detailed upload information
+        images = self._get_images_for_upload()
+        all_images = list(self.source_path.glob("*.tif"))
+
+        quota = self.estimate_quota()
+        logger.info(f"Total images in source: {quota['total_images']}")
+        logger.info(f"Total size: {quota['total_size_gb']:.2f} GB ({quota['total_size_mb']:.2f} MB)")
+        logger.info("")
+
+        # Check what already exists
+        existing = set()
+        tasked = set()
+        if self.collection_manager.exists(self.destination_path):
+            existing = self.collection_manager.list_assets(self.destination_path)
+            tasked = self.task_manager.get_ingestion_tasks(self.destination_path)
+
+        logger.info(f"Images to upload: {len(images)}")
+        logger.info(f"Already in collection: {len(existing)}")
+        logger.info(f"Currently being ingested: {len(tasked)}")
+        logger.info("")
+
+        if images:
+            logger.info("Files that will be uploaded:")
+            for img in images[:10]:  # Show first 10
+                logger.info(f"  • {img.name}")
+            if len(images) > 10:
+                logger.info(f"  ... and {len(images) - 10} more")
+            logger.info("")
+
+        if existing:
+            logger.info(f"Files already in collection (will skip): {len(existing)}")
+            existing_list = list(existing)[:5]
+            for name in existing_list:
+                logger.info(f"  • {name}")
+            if len(existing) > 5:
+                logger.info(f"  ... and {len(existing) - 5} more")
+            logger.info("")
+
+        if tasked:
+            logger.info(f"Files currently being ingested (will skip): {len(tasked)}")
+            tasked_list = list(tasked)[:5]
+            for name in tasked_list:
+                logger.info(f"  • {name}")
+            if len(tasked) > 5:
+                logger.info(f"  ... and {len(tasked) - 5} more")
+            logger.info("")
+
+        if self.metadata_collection:
+            logger.info(f"Metadata entries loaded: {len(self.metadata_collection.entries)}")
+            logger.info("")
+
+        logger.info("Configuration:")
+        logger.info(f"  Destination: {self.destination_path}")
+        logger.info(f"  Pyramiding policy: {self.pyramiding}")
+        logger.info(f"  Overwrite mode: {self.overwrite}")
+        logger.info(f"  NoData value: {self.nodata_value if self.nodata_value is not None else 'Not set'}")
+        logger.info(f"  Mask bands: {self.mask}")
+        logger.info(f"  Workers: {self.workers}")
+        logger.info(f"  Max inflight tasks: {self.max_inflight_tasks}")
+
+        logger.info("=" * 60)
+        return True
+
+    def _get_images_for_upload(self) -> List[Path]:
+        """Get list of images that need uploading."""
+        all_images = sorted(self.source_path.glob("*.tif"))
+
+        if not self.collection_manager.exists(self.destination_path):
+            logger.info(f"Collection does not exist yet, will create: {self.destination_path}")
+            return all_images
+
+        if self.overwrite:
+            logger.info("Overwrite mode enabled - will re-upload all images")
+            return all_images
+
+        # Check existing assets
+        existing = self.collection_manager.list_assets(self.destination_path)
+        tasked = self.task_manager.get_ingestion_tasks(self.destination_path)
+
+        # Load state for resume
+        state = None
+        if self.resume or self.retry_failed:
+            state = UploadState.load(self.state_file)
+
+        images_to_upload = []
+        skipped_existing = []
+        skipped_ingesting = []
+        skipped_state = []
+
+        for img in all_images:
+            name = img.stem
+
+            # Skip if already exists
+            if name in existing:
+                skipped_existing.append(name)
+                logger.debug(f"Skipping {name}: already exists in collection")
+                continue
+
+            # Skip if task is running
+            if name in tasked:
+                skipped_ingesting.append(name)
+                logger.debug(f"Skipping {name}: ingestion task already running")
+                continue
+
+            # Handle resume/retry
+            if state:
+                asset_state = state.assets.get(name)
+                if self.retry_failed and asset_state == AssetState.FAILED.value:
+                    images_to_upload.append(img)
+                elif self.resume and asset_state not in [AssetState.SUCCEEDED.value]:
+                    images_to_upload.append(img)
+                elif not self.resume and not self.retry_failed:
+                    images_to_upload.append(img)
+                else:
+                    skipped_state.append(name)
+            else:
+                images_to_upload.append(img)
+
+        # Detailed logging
+        logger.info(
+            f"Found {len(images_to_upload)} images to upload "
+            f"(skipped: {len(skipped_existing)} existing, "
+            f"{len(skipped_ingesting)} ingesting, "
+            f"{len(skipped_state)} by state)"
+        )
+
+        # Show which specific files were skipped and why
+        if skipped_existing:
+            logger.info(f"Skipped {len(skipped_existing)} images already in collection:")
+            for name in skipped_existing[:5]:
+                logger.info(f"  • {name}")
+            if len(skipped_existing) > 5:
+                logger.info(f"  ... and {len(skipped_existing) - 5} more")
+
+        if skipped_ingesting:
+            logger.info(f"Skipped {len(skipped_ingesting)} images currently being ingested:")
+            for name in skipped_ingesting[:5]:
+                logger.info(f"  • {name}")
+            if len(skipped_ingesting) > 5:
+                logger.info(f"  ... and {len(skipped_ingesting) - 5} more")
+
+        return images_to_upload
+
+    def upload(self) -> bool:
+        """Execute the upload."""
+        # Dry run
+        if self.dry_run:
+            return self.print_dry_run_summary()
+
+        # Validate (this also loads metadata)
+        valid, errors = self.validate()
+        if not valid:
+            logger.error("Validation failed:")
+            for error in errors:
+                logger.error(f"  - {error}")
+            return False
+
+        # Load authentication
+        if not self.session_manager.load_cookies():
+            logger.error("Failed to authenticate")
+            return False
+
+        # Create collection
+        self.collection_manager.create(self.destination_path)
+
+        # Get images to upload
+        images = self._get_images_for_upload()
+        if not images:
+            logger.info("No images to upload")
+            return True
+
+        logger.info(
+            f"Starting upload of {len(images)} images with {self.workers} worker(s)"
+        )
+
+        # Initialize state
+        state = UploadState(
+            assets={},
+            failed_reasons={},
+            timestamp=time.time(),
+            collection_path=self.destination_path,
+        )
+
+        # Upload with workers
+        total = len(images)
+        success_count = 0
+
+        try:
+            if self.workers == 1:
+                # Sequential upload
+                for i, image_path in enumerate(images, 1):
+                    success = self._upload_single(image_path, state, i, total)
+                    if success:
+                        success_count += 1
+            else:
+                # Parallel upload
+                with ThreadPoolExecutor(max_workers=self.workers) as executor:
+                    futures = {
+                        executor.submit(self._upload_single, img, state, i, total): img
+                        for i, img in enumerate(images, 1)
+                    }
+
+                    for future in as_completed(futures):
+                        if future.result():
+                            success_count += 1
+
+        except KeyboardInterrupt:
+            logger.warning("\n\nUpload interrupted by user (Ctrl+C)")
+            logger.info(f"Processed {success_count}/{total} images before interruption")
+            logger.info("Upload state has been saved. Use --resume to continue later.")
+            state.save(self.state_file)
+            sys.exit(130)  # Standard exit code for SIGINT
+        except Exception as e:
+            logger.error(f"\n\nUpload failed with error: {e}")
+            state.save(self.state_file)
+            raise
+
+        # Save final state
+        state.save(self.state_file)
+
+        logger.info(f"\nUpload complete: {success_count}/{total} successful")
+        return success_count == total
+
+    def _upload_single(
+        self, image_path: Path, state: UploadState, current: int, total: int
+    ) -> bool:
+        """Upload a single image."""
+        filename = image_path.stem
+
+        try:
+            # Wait for capacity
+            self.task_manager.wait_for_capacity(self.max_inflight_tasks)
+
+            # Check metadata (if required)
+            if self.metadata_collection and not self.metadata_collection.has_metadata(
+                filename
+            ):
+                logger.warning(f"[{current}/{total}] Skipping {filename}: no metadata")
+                state.assets[filename] = AssetState.SKIPPED.value
+                return False
+
+            # Upload to GCS (gets fresh URL per file)
+            gsid = self._upload_to_gcs(image_path, current, total)
+            if not gsid:
+                raise Exception("Failed to upload to GCS")
+
+            # Get metadata properties (already validated and converted)
+            props = {}
+            start_time = None
+            end_time = None
+
+            if self.metadata_collection:
+                gee_props = self.metadata_collection.get(filename)
+                if gee_props:
+                    props = gee_props.copy()
+
+                    # Extract and convert timestamps (milliseconds -> seconds for API)
+                    if "system:time_start" in props:
+                        start_time_ms = props.pop("system:time_start")
+                        start_time = int(start_time_ms / 1000)
+
+                    if "system:time_end" in props:
+                        end_time_ms = props.pop("system:time_end")
+                        end_time = int(end_time_ms / 1000)
+
+                    # Remove system:index from properties (not needed in payload)
+                    props.pop("system:index", None)
+
+            # Build asset path
+            asset_path = f"{self.destination_path}/{filename}"
+
+            # Validate asset path
+            valid, error = PathValidator.validate_path(asset_path)
+            if not valid:
+                raise ValueError(error)
+
+            # Build payload
+            payload = {
+                "name": asset_path,
+                "pyramidingPolicy": self.pyramiding,
+                "tilesets": [{"sources": [{"uris": gsid}]}],
+                "properties": props,
+            }
+
+            if start_time:
+                payload["start_time"] = {"seconds": start_time}
+            if end_time:
+                payload["end_time"] = {"seconds": end_time}
+            if self.nodata_value is not None:
+                payload["missing_data"] = {"values": [self.nodata_value]}
+            if self.mask:
+                payload["maskBands"] = {"bandIds": [], "tilesetId": ""}
+
+            # Start ingestion
+            request_id = ee.data.newTaskId()[0]
+            output = ee.data.startIngestion(
+                request_id, payload, allow_overwrite=self.overwrite
+            )
+
+            logger.info(
+                f"[{current}/{total}] Started {filename} | "
+                f"Task: {output['id']} | Status: {output.get('started', 'submitted')}"
+            )
+
+            state.assets[filename] = AssetState.RUNNING.value
+            state.save(self.state_file)
+            return True
+
+        except KeyboardInterrupt:
+            # Re-raise to be caught by main upload loop
+            logger.info(f"\n[{current}/{total}] Upload of {filename} interrupted")
+            state.assets[filename] = AssetState.FAILED.value
+            state.failed_reasons[filename] = "Interrupted by user"
+            state.save(self.state_file)
+            raise
+        except Exception as e:
+            logger.error(f"[{current}/{total}] Failed {filename}: {e}")
+            state.assets[filename] = AssetState.FAILED.value
+            state.failed_reasons[filename] = str(e)
+            state.save(self.state_file)
+            return False
+
+    def _upload_to_gcs(self, file_path: Path, current: int, total: int) -> Optional[str]:
+        """
+        Upload file to Google Cloud Storage with tqdm progress tracking.
+        Gets a fresh upload URL for each file (URLs are single-use).
+        """
+        # Get fresh URL for this file
+        upload_url = self.session_manager.get_upload_url()
+        if not upload_url:
+            return None
+
+        try:
+            with open(file_path, "rb") as f:
+                m = MultipartEncoder(fields={"image_file": (file_path.name, f)})
+
+                # Add tqdm progress monitoring
+                if self.show_progress:
+                    # Create tqdm progress bar
+                    with tqdm(
+                        total=m.len,
+                        unit='B',
+                        unit_scale=True,
+                        unit_divisor=1024,
+                        desc=f"[{current}/{total}] {file_path.stem}",
+                        leave=False,
+                        position=0,
+                        ncols=100
+                    ) as pbar:
+                        def callback(monitor):
+                            # Update progress bar with bytes read since last update
+                            pbar.update(monitor.bytes_read - pbar.n)
+
+                        monitor = MultipartEncoderMonitor(m, callback)
+
+                        response = self.session_manager.session.post(
+                            upload_url,
+                            data=monitor,
+                            headers={"Content-Type": monitor.content_type},
+                            timeout=300,
+                        )
+                else:
+                    response = self.session_manager.session.post(
+                        upload_url,
+                        data=m,
+                        headers={"Content-Type": m.content_type},
+                        timeout=300,
+                    )
+
+                response.raise_for_status()
+                return response.json()[0]
+
+        except Exception as e:
+            logger.error(f"GCS upload failed for {file_path.name}: {e}")
+            return None
 
 
 def upload(
-    user,
-    source_path,
-    pyramiding,
-    mask,
-    destination_path,
-    metadata_path=None,
-    nodata_value=None,
-    overwrite=None,
+    user: str,
+    source_path: str,
+    destination_path: str,
+    metadata_path: Optional[str] = None,
+    nodata_value: Optional[float] = None,
+    mask: bool = False,
+    pyramiding: str = "MEAN",
+    overwrite: Optional[str] = None,
+    dry_run: bool = False,
+    workers: int = 1,
+    max_inflight_tasks: int = 2800,
+    resume: bool = False,
+    retry_failed: bool = False,
 ):
-    schema = {"collection_path": {"type": "string", "regex": "^[a-zA-Z0-9/_-]+$"}}
-    collection_validate = {"collection_path": destination_path}
-    v = Validator(schema, error_handler=CustomErrorHandler(schema))
-    if v.validate(collection_validate, schema) is False:
-        sys.exit(v.errors)
+    """
+    Upload images to Google Earth Engine.
 
-    ee.Initialize()
-
-    logging.basicConfig(
-        format="%(asctime)s %(levelname)-4s %(message)s",
-        level=logging.INFO,
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    path = os.path.join(os.path.expanduser(source_path), "*.tif")
-    all_images_paths = glob.glob(path)
-    if len(all_images_paths) == 0:
-        print("%s does not contain any tif images.", path)
-        sys.exit(1)
-
-    metadata = load_metadata_from_csv(metadata_path) if metadata_path else None
-
-    google_session = __get_google_auth_session(user)
-
-    __create_image_collection(destination_path)
-
-    images_for_upload_path = __find_remaining_assets_for_upload(
-        all_images_paths, destination_path, overwrite
-    )
-    no_images = len(images_for_upload_path)
-
-    if no_images == 0:
-        print("No images found that match %s. Exiting...", path)
-        sys.exit(1)
-    file_count = len(images_for_upload_path)
-    for current_image_no, image_path in enumerate(natsorted(images_for_upload_path)):
-        # logging.info(
-        #     f"Processing image {current_image_no + 1} out of {no_images} : {image_path}"
-        # )
-        task_count = task_counter()
-        while task_count >= 2800:
-            logging.info(
-                f"Total tasks running or submitted {task_count}: waiting for 5 minutes"
-            )
-            time.sleep(300)
-            task_count = task_counter()
-        filename = __get_filename_from_path(path=image_path)
-
-        destination_path = ee.data.getAsset(destination_path + "/")["name"]
-        asset_full_path = destination_path + "/" + filename
-
-        if metadata and not filename in metadata:
-            print(
-                f"No metadata exists for image: {filename} ==>it will not be ingested"
-            )
-            continue
-
-        properties = metadata[filename] if metadata else None
-        try:
-            if user is not None:
-                gsid = __upload_file_gee(session=google_session, file_path=image_path)
-
-            df = pd.read_csv(metadata_path)
-            dd = (df.applymap(type) == str).all(0)
-            for ind, val in dd.items():
-                if val == True:
-                    slist.append(ind)
-            intcol = list(df.select_dtypes(include=["int64"]).columns)
-            floatcol = list(df.select_dtypes(include=["float64"]).columns)
-            with open(metadata_path, "r") as f:
-                reader = csv.DictReader(f, delimiter=",")
-                for i, line in enumerate(reader):
-                    if line["id_no"] == os.path.basename(image_path).split(".tif")[0]:
-                        j = {}
-                        for integer in intcol:
-                            value = integer
-                            j[value] = int(line[integer])
-                        for s in slist:
-                            value = s
-                            j[value] = str(line[s])
-                        for f in floatcol:
-                            value = f
-                            j[value] = float(line[f])
-                        # j['id']=destination_path+'/'+line["id_no"]
-                        # j['tilesets'][0]['sources'][0]['primaryPath']=gsid
-                        if "system:time_start" in j:
-                            start = str(j["system:time_start"])
-                            if len(start) == 12:
-                                start = int(round(int(start) * 0.001))
-                            else:
-                                start = int(str(start)[:10])
-                            j.pop("system:time_start")
-                        elif "system:time_start" not in j:
-                            start = None
-                        if "system:time_end" in j:
-                            end = str(j["system:time_end"])
-                            if len(end) == 12:
-                                end = int(round(int(end) * 0.001))
-                            else:
-                                end = int(str(end)[:10])
-                            j.pop("system:time_end")
-                        elif "system:time_end" not in j:
-                            end = None
-                        if pyramiding is not None:
-                            pyramidingPolicy = pyramiding.upper()
-                        else:
-                            pyramidingPolicy = "MEAN"
-                        json_data = json.dumps(j)
-                        main_payload = {
-                            "name": asset_full_path,
-                            "pyramidingPolicy": pyramidingPolicy,
-                            "tilesets": [{"sources": [{"uris": gsid}]}],
-                            "start_time": {"seconds": ""},
-                            "end_time": {"seconds": ""},
-                            "properties": j,
-                            "missing_data": {"values": [nodata_value]},
-                            "maskBands": {"bandIds": [], "tilesetId": ""},
-                        }
-                        if start is not None:
-                            main_payload["start_time"]["seconds"] = start
-                        else:
-                            main_payload.pop("start_time")
-                        if end is not None:
-                            main_payload["end_time"]["seconds"] = end
-                        else:
-                            main_payload.pop("end_time")
-                        if nodata_value is None:
-                            main_payload.pop("missing_data")
-                        if bool(mask) is False:
-                            main_payload.pop("maskBands")
-
-                        # print(json.dumps(main_payload, indent=2))
-                        schema = {
-                            "asset_path": {
-                                "type": "string",
-                                "regex": "^[a-zA-Z0-9/_-]+$",
-                            }
-                        }
-                        asset_validate = {"asset_path": asset_full_path}
-                        v = Validator(schema, error_handler=CustomErrorHandler(schema))
-                        if v.validate(asset_validate, schema) is False:
-                            print(v.errors)
-                            raise Exception
-                        request_id = ee.data.newTaskId()[0]
-                        check_list = ["yes", "y"]
-                        if overwrite is not None and overwrite.lower() in check_list:
-                            output = ee.data.startIngestion(
-                                request_id, main_payload, allow_overwrite=True
-                            )
-                        else:
-                            output = ee.data.startIngestion(
-                                request_id, main_payload, allow_overwrite=False
-                            )
-                        logging.info(
-                            f"Ingesting {current_image_no+1} of {file_count} {str(os.path.basename(asset_full_path))} with Task Id: {output['id']} & status {output['started']}"
-                        )
-        except Exception as error:
-            print(error)
-            print("Upload of " + str(filename) + " has failed.")
-        except (KeyboardInterrupt, SystemExit) as error:
-            sys.exit("Program escaped by User")
-
-
-def __find_remaining_assets_for_upload(path_to_local_assets, path_remote, overwrite):
-    local_assets = [__get_filename_from_path(path) for path in path_to_local_assets]
-    if __collection_exist(path_remote):
-        check_list = ["yes", "y"]
-        if overwrite is not None and overwrite.lower() in check_list:
-            return path_to_local_assets
-        else:
-            remote_assets = __get_asset_names_from_collection(path_remote)
-            tasked_assets = []
-            status = ["RUNNING", "PENDING"]
-            for task in ee.data.listOperations():
-                if (
-                    task["metadata"]["type"] == "INGEST_IMAGE"
-                    and task["metadata"]["state"] in status
-                ):
-                    tasked_assets.append(
-                        task["metadata"]["description"]
-                        .split(":")[-1]
-                        .split("/")[-1]
-                        .replace('"', "")
-                    )
-            if len(remote_assets) >= 0:
-                assets_left_for_upload = set(local_assets).difference(
-                    set(remote_assets), set(tasked_assets)
-                )
-                if len(assets_left_for_upload) == 0:
-                    print(
-                        f"All assets already ingested or running : {len(set(remote_assets))} assets ingested with {len(set(tasked_assets))} tasks running or submitted"
-                    )
-                    sys.exit(1)
-                elif len(assets_left_for_upload) > 0:
-                    print(
-                        f"Total of {len(assets_left_for_upload)} assets remaining : Total of {len(set(remote_assets))} already in collection with {len(set(tasked_assets))} associated tasks running or submitted"
-                    )
-
-                assets_left_for_upload_full_path = [
-                    path
-                    for path in path_to_local_assets
-                    if __get_filename_from_path(path) in assets_left_for_upload
-                ]
-                return assets_left_for_upload_full_path
-
-    return path_to_local_assets
-
-
-def retry_if_ee_error(exception):
-    return isinstance(exception, ee.EEException)
-
-
-def cookie_check(cookie_list):
-    cook_list = []
-    for items in cookie_list:
-        cook_list.append("{}={}".format(items["name"], items["value"]))
-    cookie = "; ".join(cook_list)
-    headers = {"cookie": cookie}
-    response = requests.get(
-        "https://code.earthengine.google.com/assets/upload/geturl", headers=headers
-    )
-    if (
-        response.status_code == 200
-        and response.headers.get("content-type").split(";")[0] == "application/json"
-    ):
-        return True
-    else:
-        return False
-
-
-def __get_google_auth_session(username):
-    ee.Initialize()
-    platform_info = platform.system().lower()
-    if str(platform_info) == "linux" or str(platform_info) == "darwin":
-        subprocess.check_call(["stty", "-icanon"])
-    if not os.path.exists("cookie_jar.json"):
-        try:
-            cookie_list = raw_input("Enter your Cookie List:  ")
-        except Exception:
-            cookie_list = input("Enter your Cookie List:  ")
-        finally:
-            with open("cookie_jar.json", "w") as outfile:
-                json.dump(json.loads(cookie_list), outfile)
-        cookie_list = json.loads(cookie_list)
-    elif os.path.exists("cookie_jar.json"):
-        with open("cookie_jar.json") as json_file:
-            cookie_list = json.load(json_file)
-        if cookie_check(cookie_list) is True:
-            print("Using saved Cookies")
-            cookie_list = cookie_list
-        elif cookie_check(cookie_list) is False:
-            try:
-                cookie_list = raw_input("Cookies Expired | Enter your Cookie List:  ")
-            except Exception:
-                cookie_list = input("Cookies Expired | Enter your Cookie List:  ")
-            finally:
-                with open("cookie_jar.json", "w") as outfile:
-                    json.dump(json.loads(cookie_list), outfile)
-                    cookie_list = json.loads(cookie_list)
-    time.sleep(5)
-    if str(platform.system().lower()) == "windows":
-        os.system("cls")
-    elif str(platform.system().lower()) == "linux":
-        os.system("clear")
-        subprocess.check_call(["stty", "icanon"])
-    elif str(platform.system().lower()) == "darwin":
-        os.system("clear")
-        subprocess.check_call(["stty", "icanon"])
-    else:
-        sys.exit(f"Operating system is not supported")
-    session = requests.Session()
-    for cookies in cookie_list:
-        session.cookies.set(cookies["name"], cookies["value"])
-    response = session.get("https://code.earthengine.google.com/assets/upload/geturl")
-    if (
-        response.status_code == 200
-        and ast.literal_eval(response.text)["url"] is not None
-    ):
-        return session
-    else:
-        print(response.status_code, response.text)
-
-
-def __get_upload_url(session):
-    r = session.get("https://code.earthengine.google.com/assets/upload/geturl")
+    Args:
+        user: Username (deprecated, kept for compatibility)
+        source_path: Path to directory containing .tif files
+        destination_path: GEE collection path
+        metadata_path: Path to metadata CSV (must contain 'asset_id' or 'system:index' column)
+        nodata_value: No data value for images
+        mask: Whether to apply mask bands
+        pyramiding: Pyramiding policy (MEAN, SAMPLE, MIN, MAX, MODE) - defaults to MEAN
+        overwrite: Whether to overwrite existing assets ('yes'/'y')
+        dry_run: Run validation without uploading
+        workers: Number of parallel workers
+        max_inflight_tasks: Maximum concurrent EE tasks
+        resume: Resume from previous state
+        retry_failed: Retry only failed uploads
+    """
     try:
-        d = ast.literal_eval(r.text)
-        return d["url"]
-    except Exception as e:
-        print(e)
+        uploader = BatchUploader(
+            source_path=source_path,
+            destination_path=destination_path,
+            metadata_path=metadata_path,
+            pyramiding=pyramiding,  # Will be validated in __init__
+            nodata_value=nodata_value,
+            mask=mask,
+            overwrite=overwrite and overwrite.lower() in ["yes", "y"],
+            dry_run=dry_run,
+            workers=workers,
+            max_inflight_tasks=max_inflight_tasks,
+            resume=resume,
+            retry_failed=retry_failed,
+            show_progress=True,
+        )
 
-
-@retrying.retry(
-    retry_on_exception=retry_if_ee_error,
-    wait_exponential_multiplier=1000,
-    wait_exponential_max=4000,
-    stop_max_attempt_number=3,
-)
-def __upload_file_gee(session, file_path):
-    with open(file_path, "rb") as f:
-        file_name = os.path.basename(file_path)
-        upload_url = __get_upload_url(session)
-        files = {"file": f}
-        m = MultipartEncoder(fields={"image_file": (file_name, f)})
-        try:
-            resp = session.post(
-                upload_url, data=m, headers={"Content-Type": m.content_type}
-            )
-            gsid = resp.json()[0]
-            return gsid
-        except Exception as e:
-            print(e)
-
-
-@retrying.retry(
-    retry_on_exception=retry_if_ee_error,
-    wait_exponential_multiplier=1000,
-    wait_exponential_max=4000,
-    stop_max_attempt_number=3,
-)
-def __get_filename_from_path(path):
-    return os.path.splitext(os.path.basename(os.path.normpath(path)))[0]
-
-
-def __get_number_of_running_tasks():
-    return len([task for task in ee.data.getTaskList() if task["state"] == "RUNNING"])
-
-
-def __collection_exist(path):
-    return True if ee.data.getInfo(path) else False
-
-
-def __create_image_collection(full_path_to_collection):
-    if __collection_exist(full_path_to_collection):
-        print("Collection " + str(full_path_to_collection) + " already exists")
-    else:
-        print("Collection does not exist: Creating {}".format(full_path_to_collection))
-        try:
-            ee.data.createAsset(
-                {"type": ee.data.ASSET_TYPE_IMAGE_COLL_CLOUD}, full_path_to_collection
-            )
-        except Exception:
-            ee.data.createAsset(
-                {"type": ee.data.ASSET_TYPE_IMAGE_COLL}, full_path_to_collection
-            )
-
-
-def __get_asset_names_from_collection(collection_path):
-    assets_list = ee.data.getList(params={"id": collection_path})
-    assets_names = [os.path.basename(asset["id"]) for asset in assets_list]
-    return assets_names
+        success = uploader.upload()
+        if not success:
+            sys.exit(1)
+    except ValueError as e:
+        logger.error(f"Configuration error: {e}")
+        sys.exit(1)
