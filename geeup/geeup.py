@@ -1,21 +1,7 @@
-__copyright__ = """
+"""Simple CLI for Earth Engine Uploads
 
-    Copyright 2025 Samapriya Roy
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
+SPDX-License-Identifier: Apache-2.0
 """
-__license__ = "Apache 2.0"
 
 import argparse
 import csv
@@ -63,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 
 # Initialize Earth Engine if not showing help
-if len(sys.argv) > 1 and sys.argv[1] not in ["-h", "--help"]:
+if len(sys.argv) > 1 and sys.argv[1] not in ["-h", "--help", "auth"]:
     initialize_ee()
 
 
@@ -208,6 +194,91 @@ def rename(directory: str, batch: bool = False):
         f"\n[green]✓ Renamed {renamed_count} of {len(rename_map)} files[/green]"
     )
 
+def auth_setup(cred_path: Optional[str] = None, remove: bool = False, status: bool = False):
+    """Manage service account authentication."""
+    from .auth import get_sa_credentials_path
+
+    sa_dir, sa_file = get_sa_credentials_path()
+
+    # Show status
+    if status:
+        if sa_file.exists():
+            try:
+                with open(sa_file) as f:
+                    sa_data = json.load(f)
+                    service_account = sa_data.get('client_email', 'Unknown')
+
+                table = Table(show_header=False, box=None)
+                table.add_row("[cyan]Status:[/cyan]", "[green]Service account configured[/green]")
+                table.add_row("[cyan]Email:[/cyan]", service_account)
+                table.add_row("[cyan]Credentials:[/cyan]", str(sa_file))
+                console.print(table)
+            except Exception as e:
+                console.print(f"[red]Error reading credentials: {e}[/red]")
+        else:
+            console.print("[yellow]No service account configured[/yellow]")
+            console.print("[dim]Using default Earth Engine authentication[/dim]")
+        return
+
+    # Remove credentials
+    if remove:
+        if sa_file.exists():
+            try:
+                sa_file.unlink()
+                console.print("[green]✓ Service account credentials removed successfully[/green]")
+                console.print("[dim]Will use default Earth Engine authentication[/dim]")
+            except Exception as e:
+                console.print(f"[red]Error removing credentials: {e}[/red]")
+        else:
+            console.print("[yellow]No service account credentials found to remove[/yellow]")
+        return
+
+    # Store credentials
+    if cred_path:
+        cred_path_obj = Path(cred_path)
+
+        if not cred_path_obj.exists():
+            console.print(f"[red]Error: Credentials file not found: {cred_path}[/red]")
+            return
+
+        try:
+            # Read and validate the credentials file
+            with open(cred_path_obj) as f:
+                sa_data = json.load(f)
+
+            # Validate required fields
+            if 'client_email' not in sa_data:
+                console.print("[red]Error: Invalid service account file - missing 'client_email' field[/red]")
+                return
+
+            if 'private_key' not in sa_data:
+                console.print("[red]Error: Invalid service account file - missing 'private_key' field[/red]")
+                return
+
+            service_account = sa_data['client_email']
+
+            # Create directory if it doesn't exist
+            sa_dir.mkdir(parents=True, exist_ok=True)
+
+            # Copy credentials to the standard location
+            with open(sa_file, 'w') as f:
+                json.dump(sa_data, f, indent=2)
+
+            console.print("[green]✓ Service account credentials stored successfully[/green]")
+            console.print(f"[cyan]Service account:[/cyan] {service_account}")
+            console.print(f"[cyan]Credentials saved to:[/cyan] {sa_file}")
+            console.print("\n[dim]Future geeup commands will use this service account automatically[/dim]")
+
+        except json.JSONDecodeError:
+            console.print("[red]Error: Invalid JSON file[/red]")
+        except Exception as e:
+            console.print(f"[red]Error storing credentials: {e}[/red]")
+    else:
+        console.print("[yellow]Please specify a credentials file path with --cred[/yellow]")
+        console.print("\n[cyan]Examples:[/cyan]")
+        console.print("  geeup auth --cred /path/to/service-account.json")
+        console.print("  geeup auth --status")
+        console.print("  geeup auth --remove")
 
 def zipshape(directory: str, export: str):
     """
@@ -385,8 +456,8 @@ def getmeta(indir: str, mfile: str):
     - raster dimensions (xsize, ysize)
     - band count (num_bands)
     - data type
-    - color interpretation
-    - inferred semantic kind (image, categorical, or continuous)
+    - color interpretation (skipped if "Undefined")
+    - inferred semantic kind (skipped if "unknown")
     """
     try:
         from osgeo import gdal
@@ -464,27 +535,29 @@ def getmeta(indir: str, mfile: str):
             return
 
         # ------------------------------------------------------------------
-        # CSV initialization
+        # CSV initialization - only core fields initially
         # ------------------------------------------------------------------
         mfile_path = Path(mfile)
-        fieldnames = [
+
+        # Start with base fieldnames
+        base_fieldnames = [
             "system:index",
             "xsize",
             "ysize",
             "num_bands",
             "data_type",
-            "color_interpretation",
-            "inferred_kind",
         ]
 
-        with open(mfile_path, "w", newline="") as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
+        # We'll determine if we need optional fields after processing first file
+        fieldnames = base_fieldnames.copy()
+        optional_fields = []
 
         # ------------------------------------------------------------------
         # Process Rasters
         # ------------------------------------------------------------------
         processed = 0
+        rows_to_write = []
+
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -505,23 +578,34 @@ def getmeta(indir: str, mfile: str):
                     # Get metadata for the first band for types and interpretation
                     band = safe(lambda: ds.GetRasterBand(1))
 
+                    # Build base row
                     row = {
                         "system:index": tif_file.stem,
                         "xsize": ds.RasterXSize,
                         "ysize": ds.RasterYSize,
                         "num_bands": ds.RasterCount,
                         "data_type": safe(lambda: gdal.GetDataTypeName(band.DataType)) if band else "unknown",
-                        "color_interpretation": safe(lambda: gdal.GetColorInterpretationName(band.GetColorInterpretation())) if band else "unknown",
-                        "inferred_kind": classify_band(band) if band else "unknown",
                     }
 
-                    # Append row to CSV
-                    with open(mfile_path, "a", newline="") as csvfile:
-                        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                        writer.writerow(row)
+                    # Check optional fields
+                    if band:
+                        color_interp = safe(lambda: gdal.GetColorInterpretationName(band.GetColorInterpretation()))
+                        inferred = classify_band(band)
 
+                        # Only add if not "Undefined" or "unknown"
+                        if color_interp and color_interp != "Undefined":
+                            row["color_interpretation"] = color_interp
+                            if "color_interpretation" not in optional_fields:
+                                optional_fields.append("color_interpretation")
+
+                        if inferred and inferred != "unknown":
+                            row["inferred_kind"] = inferred
+                            if "inferred_kind" not in optional_fields:
+                                optional_fields.append("inferred_kind")
+
+                    rows_to_write.append(row)
                     processed += 1
-                    ds = None # Ensure file is closed
+                    ds = None  # Ensure file is closed
 
                 except Exception as e:
                     logger.error(f"Error processing {tif_file.name}: {e}")
@@ -529,139 +613,33 @@ def getmeta(indir: str, mfile: str):
                 finally:
                     progress.update(task, advance=1)
 
+        # ------------------------------------------------------------------
+        # Write CSV with only relevant fields
+        # ------------------------------------------------------------------
+        if rows_to_write:
+            # Finalize fieldnames with optional fields that had valid values
+            fieldnames.extend(optional_fields)
+
+            with open(mfile_path, "w", newline="") as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+
+                for row in rows_to_write:
+                    # Only write fields that exist in our final fieldnames
+                    filtered_row = {k: v for k, v in row.items() if k in fieldnames}
+                    writer.writerow(filtered_row)
+
         console.print(f"\n[green]✓ Processed {processed} of {len(tif_files)} files[/green]")
         console.print(f"[cyan]Metadata saved to: {mfile_path}[/cyan]")
+
+        if optional_fields:
+            console.print(f"[dim]Included optional fields: {', '.join(optional_fields)}[/dim]")
+        else:
+            console.print(f"[dim]No optional metadata fields were populated (color_interpretation and inferred_kind were undefined)[/dim]")
 
     finally:
         # Restore normal error handling for the rest of the application
         gdal.PopErrorHandler()
-# def getmeta(indir: str, mfile: str):
-#     """
-#     Generate metadata from TIFF files with progress tracking.
-
-#     Args:
-#         indir: The input directory containing TIFF files
-#         mfile: The output CSV file where metadata will be saved
-#     """
-#     try:
-#         from osgeo import gdal
-#     except ImportError:
-#         try:
-#             import gdal  # fallback for some environments
-#         except ImportError:
-#             os_name = platform.system().lower()
-
-#             console.print("[red]Error: GDAL Python bindings are not available.[/red]\n")
-
-#             if os_name == "windows":
-#                 console.print("[yellow]Windows installation options:[/yellow]")
-#                 console.print(
-#                     "  • Using pipgeo:\n"
-#                     "    pip install pipgeo && pipgeo fetch --lib gdal\n"
-#                 )
-#                 console.print(
-#                     "  • Or download a prebuilt wheel:\n"
-#                     "    https://github.com/cgohlke/geospatial-wheels/releases\n"
-#                 )
-
-#             elif os_name == "darwin":  # macOS
-#                 console.print("[yellow]macOS installation options:[/yellow]")
-#                 console.print(
-#                     "  1. Install GDAL system libraries with Homebrew:\n"
-#                     "     brew install gdal\n"
-#                 )
-#                 console.print(
-#                     "  2. Install Python bindings:\n"
-#                     "     pip install gdal\n"
-#                 )
-#                 console.print(
-#                     "  • Alternative (recommended if you hit build issues):\n"
-#                     "    conda install -c conda-forge gdal\n"
-#                 )
-
-#             elif os_name == "linux":
-#                 console.print("[yellow]Linux (Ubuntu/Debian) installation options:[/yellow]")
-#                 console.print(
-#                     "  1. Install system packages:\n"
-#                     "     sudo apt update\n"
-#                     "     sudo apt install -y libgdal-dev gdal-bin python3-gdal\n"
-#                 )
-#                 console.print(
-#                     "  2. Set include paths (required for pip builds):\n"
-#                     "     export CPLUS_INCLUDE_PATH=/usr/include/gdal\n"
-#                     "     export C_INCLUDE_PATH=/usr/include/gdal\n"
-#                 )
-#                 console.print(
-#                     "  3. Install matching Python bindings:\n"
-#                     "     pip install GDAL==$(gdal-config --version)\n"
-#                 )
-#                 console.print(
-#                     "  • Alternative (simpler, avoids dependency issues):\n"
-#                     "    conda install -c conda-forge gdal\n"
-#                 )
-
-#             else:
-#                 console.print(
-#                     "[yellow]Unsupported OS detected.[/yellow]\n"
-#                     "Please install GDAL using your system package manager or Conda:\n"
-#                     "  conda install -c conda-forge gdal"
-#                 )
-
-#             sys.exit(1)
-
-#     indir_path = Path(indir)
-#     if not indir_path.exists():
-#         console.print(f"[red]Error: Directory not found: {indir}[/red]")
-#         return
-
-#     tif_files = list(indir_path.glob("*.tif"))
-#     if not tif_files:
-#         console.print(f"[yellow]Warning: No TIFF files found in {indir}[/yellow]")
-#         return
-
-#     # Create metadata CSV
-#     mfile_path = Path(mfile)
-#     fieldnames = ["id_no", "xsize", "ysize", "num_bands"]
-
-#     with open(mfile_path, "w", newline="") as csvfile:
-#         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-#         writer.writeheader()
-
-#     # Process each TIFF file with progress
-#     with Progress(
-#         SpinnerColumn(),
-#         TextColumn("[progress.description]{task.description}"),
-#         BarColumn(),
-#         TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-#         console=console,
-#     ) as progress:
-#         task = progress.add_task("[cyan]Extracting metadata...", total=len(tif_files))
-
-#         processed = 0
-#         for tif_file in tif_files:
-#             try:
-#                 gtif = gdal.Open(str(tif_file))
-#                 if gtif is None:
-#                     logger.warning(f"Could not open {tif_file.name}")
-#                     continue
-
-#                 fname = tif_file.stem
-#                 xsize = gtif.RasterXSize
-#                 ysize = gtif.RasterYSize
-#                 bsize = gtif.RasterCount
-
-#                 with open(mfile_path, "a", newline="") as csvfile:
-#                     writer = csv.writer(csvfile)
-#                     writer.writerow([fname, xsize, ysize, bsize])
-
-#                 processed += 1
-#             except Exception as e:
-#                 logger.error(f"Error processing {tif_file.name}: {e}")
-#             finally:
-#                 progress.update(task, advance=1)
-
-#     console.print(f"\n[green]✓ Processed {processed} of {len(tif_files)} files[/green]")
-#     console.print(f"[cyan]Metadata saved to: {mfile_path}[/cyan]")
 
 
 def tasks(state: Optional[str] = None, id: Optional[str] = None):
@@ -855,6 +833,8 @@ def rename_from_parser(args):
 def cookie_setup_from_parser(args):
     cookie_setup()
 
+def auth_from_parser(args):
+    auth_setup(cred_path=args.cred, remove=args.remove, status=args.status)
 
 def quota_from_parser(args):
     quota(project=args.project)
@@ -947,6 +927,28 @@ def main(args=None):
         default=None,
     )
     parser_quota.set_defaults(func=quota_from_parser)
+
+    # AUTH command
+    parser_auth = subparsers.add_parser(
+    "auth",
+    help="Configure service account authentication"
+    )
+    optional_named = parser_auth.add_argument_group("Optional named arguments")
+    optional_named.add_argument(
+        "--cred",
+        help="Path to service account JSON credentials file"
+    )
+    optional_named.add_argument(
+        "--remove",
+        action="store_true",
+        help="Remove stored service account credentials"
+    )
+    optional_named.add_argument(
+        "--status",
+        action="store_true",
+        help="Show current authentication status"
+    )
+    parser_auth.set_defaults(func=auth_from_parser)
 
     # RENAME command
     parser_rename = subparsers.add_parser(
