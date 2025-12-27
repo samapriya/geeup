@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>geeup | Google Earth Engine Batch Uploader</title>
+    <meta name="description"
+        content="Documentation for geeup: A CLI for uploading and managing Google Earth Engine assets in batch.">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Montserrat:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        dashboard: ['Montserrat', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            900: '#7c2d12',
+                        },
+                        dark: {
+                            bg: '#0B1120',
+                            surface: '#1e293b',
+                            border: '#334155'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        /* Code Block Styling */
+        pre {
+            position: relative;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding: 1rem;
+            padding-bottom: 1rem;
+            padding-right: 4rem;
+            line-height: 1.5;
+        }
+
+        /* Glass Nav */
+        .glass-nav {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Active Navigation State */
+        .active-nav {
+            background-color: rgba(249, 115, 22, 0.1);
+            color: #f97316;
+            border-right: 3px solid #f97316;
+        }
+
+        .dark .active-nav {
+            background-color: rgba(249, 115, 22, 0.15);
+            color: #fb923c;
+            border-right: 3px solid #fb923c;
+        }
+
+        /* Accordion Animations for Sidebar */
+        .sidebar-group details>summary {
+            list-style: none;
+        }
+
+        .sidebar-group details>summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .sidebar-group details[open] summary~* {
+            animation: slideDown 0.2s ease-in-out;
+        }
+
+        @keyframes slideDown {
+            0% {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .rotate-icon {
+            transition: transform 0.3s ease;
+        }
+
+        details[open] .rotate-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Table Styles */
+        .args-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.875rem;
+        }
+
+        .args-table th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .dark .args-table th {
+            border-bottom: 1px solid #334155;
+            color: #e2e8f0;
+        }
+
+        .args-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+        }
+
+        .dark .args-table td {
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .args-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .param-tag {
+            font-family: 'JetBrains Mono', monospace;
+            color: #ea580c;
+            background-color: rgba(234, 88, 12, 0.1);
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            display: inline-block;
+        }
+
+        .dark .param-tag {
+            color: #fb923c;
+            background-color: rgba(251, 146, 60, 0.15);
+        }
+
+        .req-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #dc2626;
+            background-color: #fee2e2;
+            padding: 0.1rem 0.4rem;
+            border-radius: 999px;
+            margin-left: 0.5rem;
+        }
+
+        .dark .req-badge {
+            background-color: rgba(220, 38, 38, 0.2);
+            color: #f87171;
+        }
+
+        .opt-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #059669;
+            background-color: #d1fae5;
+            padding: 0.1rem 0.4rem;
+            border-radius: 999px;
+            margin-left: 0.5rem;
+        }
+
+        .dark .opt-badge {
+            background-color: rgba(5, 150, 105, 0.2);
+            color: #34d399;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gray-50 text-slate-800 dark:bg-dark-bg dark:text-slate-300 transition-colors duration-300 antialiased selection:bg-brand-500 selection:text-white pt-10">
+
+    <!-- Social Follow Header -->
+    <div
+        class="fixed top-0 left-0 w-full z-[60] bg-[#161b22] text-white py-2.5 flex items-center justify-center gap-6 text-sm font-medium border-b border-gray-800 shadow-md">
+        <span class="text-gray-400 font-semibold hidden sm:inline">Follow me on</span>
+        <a href="https://linkedin.com/in/samapriya" target="_blank"
+            class="flex items-center gap-1.5 hover:text-brand-400 transition-colors group">
+            <i data-lucide="linkedin" class="w-4 h-4 fill-current"></i>
+            <span class="group-hover:underline decoration-brand-400 underline-offset-4">LinkedIn</span>
+        </a>
+        <a href="https://github.com/samapriya" target="_blank"
+            class="flex items-center gap-1.5 hover:text-brand-400 transition-colors group">
+            <i data-lucide="github" class="w-4 h-4 fill-current"></i>
+            <span class="group-hover:underline decoration-brand-400 underline-offset-4">GitHub</span>
+        </a>
+        <a href="https://datacommons.substack.com" target="_blank"
+            class="flex items-center gap-1.5 hover:text-brand-400 transition-colors group">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-bookmark">
+                <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+            </svg>
+            <span class="group-hover:underline decoration-brand-400 underline-offset-4">Substack</span>
+        </a>
+    </div>
+
+    <!-- Mobile Header -->
+    <div
+        class="lg:hidden fixed top-10 w-full z-50 bg-white/90 dark:bg-dark-bg/90 glass-nav border-b border-gray-200 dark:border-dark-border px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <!-- Mobile Logo -->
+            <img src="https://i.imgur.com/Q3xnTtn.png" alt="geeup" class="w-8 h-8 rounded-md shadow-sm">
+            <span class="font-bold text-lg tracking-tight text-slate-900 dark:text-white">geeup</span>
+        </div>
+        <button id="menu-toggle" class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-dark-surface">
+            <i data-lucide="menu"></i>
+        </button>
+    </div>
+
+    <div class="flex min-h-screen pt-16 lg:pt-0">
+
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed inset-y-0 left-0 z-40 w-72 mt-10 lg:mt-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 bg-white dark:bg-dark-surface border-r border-gray-200 dark:border-dark-border flex flex-col h-screen lg:h-[calc(100vh-40px)] lg:top-10">
+            <!-- Logo Area -->
+            <div class="p-6 border-b border-gray-100 dark:border-dark-border hidden lg:block">
+                <a href="#" class="flex items-center gap-3">
+                    <div class="relative group">
+                        <!-- Main Logo Icon -->
+                        <img src="https://i.imgur.com/Q3xnTtn.png" alt="geeup"
+                            class="w-12 h-12 rounded-xl shadow-lg shadow-brand-500/20 transition-transform group-hover:scale-105 bg-white dark:bg-transparent">
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-2xl text-slate-900 dark:text-white leading-none">geeup</h1>
+                        <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-1.5">EE Batch
+                            Uploader</p>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Search -->
+            <div class="px-5 py-4">
+                <div class="relative group">
+                    <i data-lucide="search"
+                        class="absolute left-3 top-2.5 text-gray-400 w-4 h-4 group-focus-within:text-brand-500 transition-colors"></i>
+                    <input type="text" id="search-input" placeholder="Search docs..."
+                        class="w-full bg-gray-100 dark:bg-gray-900/50 text-sm rounded-lg pl-9 pr-3 py-2 border border-transparent focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:text-white transition-all placeholder:text-gray-500">
+                </div>
+            </div>
+
+            <!-- Accordion Navigation -->
+            <nav class="flex-1 overflow-y-auto px-3 pb-6 space-y-1" id="nav-container">
+                <!-- Top Level Links -->
+                <a href="#introduction"
+                    class="nav-item block px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Overview</a>
+                <a href="#interface"
+                    class="nav-item block px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Main
+                    Interface</a>
+                <a href="#installation"
+                    class="nav-item block px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Installation</a>
+
+                <!-- Auth Group -->
+                <div class="sidebar-group">
+                    <details class="group">
+                        <summary
+                            class="flex items-center justify-between px-3 py-2 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-bold text-gray-500 uppercase tracking-wider">
+                            <span class="flex items-center gap-2"><i data-lucide="key" size="14"></i>
+                                Authentication</span>
+                            <i data-lucide="chevron-down" size="14" class="rotate-icon"></i>
+                        </summary>
+                        <div class="pl-2 space-y-1 mt-1">
+                            <a href="#auth-setup"
+                                class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Service
+                                Account</a>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- Data Prep Group -->
+                <div class="sidebar-group">
+                    <details class="group">
+                        <summary
+                            class="flex items-center justify-between px-3 py-2 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-bold text-gray-500 uppercase tracking-wider">
+                            <span class="flex items-center gap-2"><i data-lucide="file-cog" size="14"></i>
+                                Data Prep</span>
+                            <i data-lucide="chevron-down" size="14" class="rotate-icon"></i>
+                        </summary>
+                        <div class="pl-2 space-y-1 mt-1">
+                            <a href="#prep-rename"
+                                class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Rename</a>
+                            <a href="#prep-zipshape"
+                                class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Zipshape</a>
+                            <a href="#prep-getmeta"
+                                class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Getmeta</a>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- Batch Upload Group -->
+                <div class="sidebar-group">
+                    <details class="group" open>
+                        <summary
+                            class="flex items-center justify-between px-3 py-2 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-bold text-gray-500 uppercase tracking-wider">
+                            <span class="flex items-center gap-2"><i data-lucide="upload-cloud" size="14"></i>
+                                Batch Upload</span>
+                            <i data-lucide="chevron-down" size="14" class="rotate-icon"></i>
+                        </summary>
+                        <div class="pl-2 space-y-1 mt-1">
+                            <a href="#upload-images"
+                                class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Upload
+                                (Images)</a>
+                            <a href="#upload-tables"
+                                class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Tabup
+                                (Tables)</a>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- Monitoring Group -->
+                <div class="sidebar-group">
+                    <details class="group">
+                        <summary
+                            class="flex items-center justify-between px-3 py-2 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-bold text-gray-500 uppercase tracking-wider">
+                            <span class="flex items-center gap-2"><i data-lucide="activity" size="14"></i>
+                                Monitoring</span>
+                            <i data-lucide="chevron-down" size="14" class="rotate-icon"></i>
+                        </summary>
+                        <div class="pl-2 space-y-1 mt-1">
+                            <a href="#monitor-quota"
+                                class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Quota</a>
+                            <a href="#monitor-tasks"
+                                class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Tasks</a>
+                            <a href="#monitor-cancel"
+                                class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Cancel</a>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- Utilities Group -->
+                <div class="sidebar-group">
+                    <details class="group">
+                        <summary
+                            class="flex items-center justify-between px-3 py-2 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-bold text-gray-500 uppercase tracking-wider">
+                            <span class="flex items-center gap-2"><i data-lucide="wrench" size="14"></i> Utils</span>
+                            <i data-lucide="chevron-down" size="14" class="rotate-icon"></i>
+                        </summary>
+                        <div class="pl-2 space-y-1 mt-1">
+                            <a href="#utils-delete"
+                                class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Delete</a>
+                            <a href="#utils-readme"
+                                class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Readme</a>
+                            <a href="#utils-cookie"
+                                class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Cookie
+                                Setup</a>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- Analytics Link -->
+                <a href="#analytics"
+                    class="nav-item block px-3 py-2 rounded-md text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10 hover:bg-blue-100 dark:hover:bg-blue-900/20 transition-colors mt-4">
+                    <i data-lucide="bar-chart-2" class="inline w-3 h-3 mr-1"></i> Analytics
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div
+                class="p-4 border-t border-gray-200 dark:border-dark-border flex items-center justify-between bg-gray-50 dark:bg-black/20">
+                <button id="theme-toggle"
+                    class="p-2 rounded-md text-gray-500 hover:bg-white dark:hover:bg-gray-700 dark:text-gray-400 transition-all shadow-sm">
+                    <i data-lucide="moon" class="block dark:hidden" size="18"></i>
+                    <i data-lucide="sun" class="hidden dark:block" size="18"></i>
+                </button>
+                <a href="https://github.com/samapriya/geeup" target="_blank"
+                    class="flex items-center gap-2 text-sm text-slate-600 hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400 transition-colors font-medium">
+                    <i data-lucide="github" size="16"></i> GitHub
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="lg:ml-72 flex-1 max-w-5xl mx-auto px-6 py-12 lg:px-12 w-full">
+
+            <!-- Hero -->
+            <section id="introduction" class="mb-16 relative">
+
+                <div
+                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 text-xs font-bold mb-6 border border-brand-100 dark:border-brand-800">
+                    <span class="relative flex h-2 w-2">
+                        <span
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+                    </span>
+                    Current Version: v2.0.0
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center justify-between gap-12 mb-8">
+                    <div class="flex-1">
+                        <h1
+                            class="text-4xl lg:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-6">
+                            Google Earth Engine <br class="hidden lg:block" />
+                            <span
+                                class="bg-clip-text text-transparent bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-400 animate-gradient">Batch
+                                Uploader</span>
+                        </h1>
+                        <p class="text-lg lg:text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-3xl mb-8">
+                            <b>geeup</b> is a comprehensive command-line tool designed to simplify data preparation and
+                            batch uploading to Google Earth Engine. Handle images, shapefiles, and metadata with
+                            retry logic and parallel processing.
+                        </p>
+                    </div>
+                    <!-- Hero Logo -->
+                    <div class="flex-shrink-0 w-48 h-48 lg:w-64 lg:h-64 relative hidden md:block">
+                        <div class="absolute inset-0 bg-brand-500/20 blur-3xl rounded-full"></div>
+                        <img src="https://i.imgur.com/Q3xnTtn.png" alt="geeup logo"
+                            class="relative w-full h-full object-contain drop-shadow-2xl hover:rotate-3 transition-transform duration-500">
+                    </div>
+                </div>
+
+                <!-- Badges -->
+                <div class="flex flex-wrap gap-2 items-center mb-8">
+                    <a href="https://pypi.org/project/geeup/" target="_blank" rel="noopener">
+                        <img src="https://img.shields.io/pypi/v/geeup" alt="PyPI version" />
+                    </a>
+                    <a href="https://github.com/samapriya/geeup" target="_blank" rel="noopener">
+                        <img src="https://img.shields.io/pypi/l/geeup" alt="License" />
+                    </a>
+                    <a href="https://github.com/sponsors/samapriya" target="_blank" rel="noopener">
+                        <img src="https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86"
+                            alt="Sponsor" />
+                    </a>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 items-center flex-wrap">
+                    <a href="#installation"
+                        class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 border border-transparent text-base font-semibold rounded-xl text-white bg-brand-600 hover:bg-brand-700 transition shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50">
+                        <i data-lucide="terminal" class="mr-2" size="20"></i> Install Now
+                    </a>
+
+                    <a href="https://github.com/samapriya/geeup" target="_blank"
+                        class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 border border-gray-300 dark:border-gray-600 text-base font-medium rounded-xl text-slate-700 dark:text-slate-200 bg-white dark:bg-dark-surface hover:bg-gray-50 dark:hover:bg-gray-800 transition shadow-sm">
+                        <i data-lucide="star" class="mr-2 text-yellow-500 fill-yellow-500" size="20"></i> Star on
+                        GitHub
+                    </a>
+                </div>
+
+            </section>
+
+            <!-- Main Interface Section -->
+            <section id="interface" class="mb-24 scroll-mt-28">
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                    <div class="bg-slate-100 dark:bg-slate-800 p-2 rounded-lg"><i data-lucide="command"
+                            class="text-brand-500"></i></div>
+                    Main Interface
+                </h2>
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>geeup</code> tool uses a subcommand structure. Run <code>geeup -h</code> to see
+                    all available commands and arguments.
+                </p>
+
+                <!-- TERMINAL BLOCK -->
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal</span>
+                    </div>
+                    <div class="relative">
+                        <pre class="font-mono text-sm text-white"><code>usage: geeup [-h] {readme,quota,auth,rename,zipshape,getmeta,cookie_setup,upload,tabup,tasks,cancel,delete} ...
+
+Simple Client for Earth Engine Uploads with Enhanced UI and Service Account Support
+
+positional arguments:
+  {readme,quota,auth,rename,zipshape,getmeta,cookie_setup,upload,tabup,tasks,cancel,delete}
+    readme              Open the geeup documentation page
+    quota               Print Earth Engine storage and asset count quota with visual progress bars
+    auth                Configure service account authentication
+    rename              Rename files to adhere to EE naming rules with interactive preview
+    zipshape            Zip all shapefiles and subsidiary files in folder with progress tracking
+    getmeta             Create generalized metadata for rasters in folder with progress tracking
+    cookie_setup        Setup cookies to be used for upload
+    upload              Batch Image Uploader for uploading TIF files to a GEE collection
+    tabup               Batch Table Uploader for uploading shapefiles/CSVs to a GEE folder
+    tasks               Query current task status with rich formatting [completed, running, ready, failed, cancelled]
+    cancel              Cancel all, running, pending tasks or specific task ID with progress tracking
+    delete              Delete collection and all items inside recursively
+
+options:
+  -h, --help            show this help message and exit</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Installation -->
+            <section id="installation" class="mb-24 scroll-mt-28">
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                    <div class="bg-slate-100 dark:bg-slate-800 p-2 rounded-lg"><i data-lucide="download"
+                            class="text-brand-500"></i></div>
+                    Installation
+                </h2>
+
+                <div class="grid gap-8">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Method
+                            1: PyPI (Recommended)</h3>
+                        <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group">
+                            <div
+                                class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                                <div class="flex gap-1.5">
+                                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                </div>
+                                <span class="text-xs text-slate-500 font-mono">Terminal</span>
+                            </div>
+                            <div class="relative">
+                                <pre class="font-mono text-sm text-white p-2"><code>pip install geeup</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="mt-8 p-4 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-400 rounded-r-lg flex gap-4">
+                    <i data-lucide="alert-triangle" class="text-amber-600 dark:text-amber-400 shrink-0"></i>
+                    <p class="text-sm text-amber-800 dark:text-amber-200">
+                        <strong>Requirement:</strong> Ensure you have the Earth Engine Python API installed and
+                        authenticated via <code
+                            class="bg-amber-100 dark:bg-amber-900/50 px-1 py-0.5 rounded font-mono text-amber-900 dark:text-amber-100">earthengine authenticate</code>.
+                    </p>
+                </div>
+            </section>
+
+            <hr class="border-gray-100 dark:border-gray-800 mb-16">
+
+            <!-- AUTH GROUP -->
+            <div class="mb-10"><span class="text-sm font-bold text-brand-500 uppercase tracking-wider">Group:
+                    Authentication</span></div>
+
+            <section id="auth-setup" class="mb-20 scroll-mt-28">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Service Account Configuration</h3>
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>geeup auth</code> command handles service account configuration. This allows for automated
+                    workflows without manual authentication prompts and enables switching between different GEE accounts
+                    easily. You can authenticate using a JSON key file, check your current status, or remove
+                    credentials.
+                </p>
+
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group mb-6">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal Usage Examples</span>
+                    </div>
+                    <div class="relative">
+                        <pre class="font-mono text-sm text-white"><code># Initialize with a service account key
+geeup auth --cred "/path/to/service-account.json"
+
+# Check which account is currently configured
+geeup auth --status
+
+# Remove the current credentials
+geeup auth --remove</code></pre>
+                    </div>
+                </div>
+
+                <!-- Auth Params -->
+                <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <table class="args-table bg-white dark:bg-dark-surface">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-gray-800">
+                                <th class="w-1/3">Argument</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-tag">--cred</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Path to service account JSON credentials
+                                    file. Used to authenticate.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--status</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Show current authentication status and
+                                    the active service account email.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--remove</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Remove stored service account credentials
+                                    and revert to default authentication.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- DATA PREP GROUP -->
+            <div class="mb-10 border-t border-gray-100 dark:border-gray-800 pt-10"><span
+                    class="text-sm font-bold text-brand-500 uppercase tracking-wider">Group:
+                    Data Preparation</span></div>
+
+            <section id="prep-rename" class="mb-20 scroll-mt-28">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Rename Files</h3>
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>rename</code> command sanitizes filenames in a directory to ensure they strictly adhere to
+                    Earth Engine naming conventions. It removes spaces and special characters that cause upload
+                    failures. By default, it runs interactively, showing a preview of changes.
+                </p>
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group mb-6">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal</span>
+                    </div>
+                    <div class="relative">
+                        <pre
+                            class="font-mono text-sm text-white"><code>geeup rename --input "./raw_data" --batch</code></pre>
+                    </div>
+                </div>
+
+                <!-- Rename Params -->
+                <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <table class="args-table bg-white dark:bg-dark-surface">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-gray-800">
+                                <th class="w-1/3">Argument</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-tag">--input</span><span class="req-badge">Required</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Path to the input directory containing
+                                    files to be renamed.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--batch</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Skip confirmation prompt and
+                                    automatically rename all files found.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="prep-zipshape" class="mb-20 scroll-mt-28">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Zip Shapefiles</h3>
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>zipshape</code> tool scans a directory for shapefile components (e.g., .shp, .shx, .dbf,
+                    .prj) and intelligently packages them into individual ZIP archives. This is a required step before
+                    uploading vectors (Table Upload).
+                </p>
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group mb-6">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal</span>
+                    </div>
+                    <div class="relative">
+                        <pre
+                            class="font-mono text-sm text-white"><code>geeup zipshape --input "./vectors" --output "./zipped_vectors"</code></pre>
+                    </div>
+                </div>
+
+                <!-- Zipshape Params -->
+                <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <table class="args-table bg-white dark:bg-dark-surface">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-gray-800">
+                                <th class="w-1/3">Argument</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-tag">--input</span><span class="req-badge">Required</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Path to the input directory containing
+                                    raw shapefiles.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--output</span><span class="req-badge">Required</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Destination folder where the created ZIP
+                                    archives will be stored.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="prep-getmeta" class="mb-20 scroll-mt-28">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Generate Metadata</h3>
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>getmeta</code> command generates a metadata CSV file for a folder of rasters. This CSV is
+                    essential for the batch uploader, as it defines properties like image IDs, dimensions, and data
+                    types.
+                </p>
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group mb-6">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal</span>
+                    </div>
+                    <div class="relative">
+                        <pre
+                            class="font-mono text-sm text-white"><code>geeup getmeta --input "./rasters" --metadata "./metadata.csv"</code></pre>
+                    </div>
+                </div>
+
+                <!-- Getmeta Params -->
+                <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <table class="args-table bg-white dark:bg-dark-surface">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-gray-800">
+                                <th class="w-1/3">Argument</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-tag">--input</span><span class="req-badge">Required</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Path to the input directory containing
+                                    raster (TIF) files.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--metadata</span><span class="req-badge">Required</span>
+                                </td>
+                                <td class="text-slate-600 dark:text-slate-400">Full path (including filename) to export
+                                    the generated metadata CSV file.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- BATCH UPLOAD GROUP -->
+            <div class="mb-10 border-t border-gray-100 dark:border-gray-800 pt-10"><span
+                    class="text-sm font-bold text-brand-500 uppercase tracking-wider">Group: Batch Upload</span></div>
+
+            <section id="upload-images" class="mb-20 scroll-mt-28">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Upload Images</h3>
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>upload</code> command is the core feature of geeup. It batch uploads GeoTIFF files to an
+                    Earth Engine Image Collection. It supports advanced features like automatic retries for failed
+                    tasks, parallel worker threads, resumption of interrupted jobs, and dry runs for validation.
+                </p>
+
+                <!-- Detailed Usage Block -->
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group mb-6">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal Usage</span>
+                    </div>
+                    <div class="relative">
+                        <pre class="font-mono text-sm text-white"><code># Comprehensive Upload Example
+geeup upload --source "./rasters" \
+      --dest "users/username/collection" \
+      --metadata "./metadata.csv" \
+      --user "email@gmail.com" \
+      --workers 4 \
+      --resume</code></pre>
+                    </div>
+                </div>
+
+                <!-- Upload Params -->
+                <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <table class="args-table bg-white dark:bg-dark-surface">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-gray-800">
+                                <th class="w-1/3">Argument</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-tag">--source</span><span class="req-badge">Required</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Path to the directory with images for
+                                    upload.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--dest</span><span class="req-badge">Required</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Destination path for GEE Image Collection
+                                    (e.g., <code>users/you/collection</code>).</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--metadata</span>, <span class="param-tag">-m</span><span
+                                        class="req-badge">Required</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Path to the metadata CSV file.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--user</span>, <span class="param-tag">-u</span><span
+                                        class="req-badge">Required</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Google account email address used for
+                                    authentication.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--nodata</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Integer value to burn into the raster as
+                                    NoData (missing data).</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--mask</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Boolean (True/False). Use the last band
+                                    as a validity mask.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--pyramids</span><span class="opt-badge">Optional</span>
+                                </td>
+                                <td class="text-slate-600 dark:text-slate-400">Pyramiding Policy: MEAN, MODE, MIN, MAX,
+                                    SAMPLE. Default: MEAN.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--overwrite</span><span class="opt-badge">Optional</span>
+                                </td>
+                                <td class="text-slate-600 dark:text-slate-400">Overwrite existing assets? Pass 'yes' or
+                                    'y'. Default: No.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--dry-run</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Run validation logic without actually
+                                    uploading files.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--workers</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Number of parallel upload workers
+                                    (threads). Default: 1.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--max-inflight-tasks</span><span
+                                        class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Maximum concurrent EE tasks allowed.
+                                    Default: 2800.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--resume</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Resume from previous state, skipping
+                                    already uploaded files.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--retry-failed</span><span class="opt-badge">Optional</span>
+                                </td>
+                                <td class="text-slate-600 dark:text-slate-400">Retry only the uploads that previously
+                                    failed.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="upload-tables" class="mb-20 scroll-mt-28">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Tabup (Table Upload)</h3>
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>tabup</code> command is designed for batch uploading table data (vectors). It accepts
+                    folders containing zipped shapefiles or CSVs and uploads them to a specified GEE folder.
+                </p>
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group mb-6">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal</span>
+                    </div>
+                    <div class="relative">
+                        <pre class="font-mono text-sm text-white"><code>geeup tabup --source "./zipped_vectors" \
+      --dest "users/username/folder" \
+      --user "email@gmail.com" \
+      --max-error-meters 1.0</code></pre>
+                    </div>
+                </div>
+
+                <!-- Tabup Params -->
+                <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <table class="args-table bg-white dark:bg-dark-surface">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-gray-800">
+                                <th class="w-1/3">Argument</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-tag">--source</span><span class="req-badge">Required</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Path to the directory with zipped files
+                                    or CSV files.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--dest</span><span class="req-badge">Required</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Destination path for GEE Folder (e.g.,
+                                    <code>users/you/folder</code>).
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--user</span>, <span class="param-tag">-u</span><span
+                                        class="req-badge">Required</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Google account email address used for
+                                    authentication.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--x</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Column name containing longitude values
+                                    (for CSVs).</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--y</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Column name containing latitude values
+                                    (for CSVs).</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--metadata</span><span class="opt-badge">Optional</span>
+                                </td>
+                                <td class="text-slate-600 dark:text-slate-400">Path to CSV with metadata.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--overwrite</span><span class="opt-badge">Optional</span>
+                                </td>
+                                <td class="text-slate-600 dark:text-slate-400">Overwrite existing assets? Pass 'yes' or
+                                    'y'.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--max-error-meters</span><span
+                                        class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Maximum allowed error in meters for
+                                    geometry. Default: 1.0.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--max-vertices</span><span class="opt-badge">Optional</span>
+                                </td>
+                                <td class="text-slate-600 dark:text-slate-400">Maximum vertices per geometry feature.
+                                    Default: 1000000.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--workers</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Number of parallel upload workers.
+                                    Default: 1.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+
+            <!-- MONITORING GROUP -->
+            <div class="mb-10 border-t border-gray-100 dark:border-gray-800 pt-10"><span
+                    class="text-sm font-bold text-brand-500 uppercase tracking-wider">Group: Monitoring</span></div>
+
+            <section id="monitor-quota" class="mb-20 scroll-mt-28">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Check Quota</h3>
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>quota</code> command prints your Earth Engine storage usage and asset counts with visual
+                    progress bars. It supports checking specific cloud projects.
+                </p>
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group mb-6">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal</span>
+                    </div>
+                    <div class="relative">
+                        <pre
+                            class="font-mono text-sm text-white"><code>geeup quota --project "projects/my-project"</code></pre>
+                    </div>
+                </div>
+
+                <!-- Quota Params -->
+                <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <table class="args-table bg-white dark:bg-dark-surface">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-gray-800">
+                                <th class="w-1/3">Argument</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-tag">--project</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Project Name, usually in the format
+                                    <code>projects/project-name/assets/</code>.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="monitor-tasks" class="mb-20 scroll-mt-28">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Task Status</h3>
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>tasks</code> command allows you to query the status of your Earth Engine tasks. You can
+                    view a summary of all tasks or filter by state and ID.
+                </p>
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group mb-6">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal</span>
+                    </div>
+                    <div class="relative">
+                        <pre class="font-mono text-sm text-white"><code>geeup tasks --state RUNNING</code></pre>
+                    </div>
+                </div>
+
+                <!-- Tasks Params -->
+                <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <table class="args-table bg-white dark:bg-dark-surface">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-gray-800">
+                                <th class="w-1/3">Argument</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-tag">--state</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Query by state type:
+                                    <code>COMPLETED</code>, <code>READY</code>, <code>RUNNING</code>,
+                                    <code>FAILED</code>, or <code>CANCELLED</code>.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-tag">--id</span><span class="opt-badge">Optional</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Query for a specific task ID.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="monitor-cancel" class="mb-20 scroll-mt-28">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Cancel Tasks</h3>
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>cancel</code> command provides a quick way to stop tasks. You can cancel specific task IDs
+                    or bulk cancel all tasks in a 'running' or 'pending' state.
+                </p>
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group mb-6">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal</span>
+                    </div>
+                    <div class="relative">
+                        <pre class="font-mono text-sm text-white"><code>geeup cancel --tasks running</code></pre>
+                    </div>
+                </div>
+
+                <!-- Cancel Params -->
+                <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <table class="args-table bg-white dark:bg-dark-surface">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-gray-800">
+                                <th class="w-1/3">Argument</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-tag">--tasks</span><span class="req-badge">Required</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Provide <code>all</code>,
+                                    <code>running</code>, <code>pending</code>, or a specific task ID string.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- UTILS GROUP -->
+            <div class="mb-10 border-t border-gray-100 dark:border-gray-800 pt-10"><span
+                    class="text-sm font-bold text-brand-500 uppercase tracking-wider">Group: Utilities</span></div>
+
+            <section id="utils-delete" class="mb-20 scroll-mt-28">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4 text-red-600 dark:text-red-400">
+                    Recursively Delete</h3>
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>delete</code> command recursively removes a collection and all assets inside it. <span
+                        class="font-bold">Use with caution</span> as this action cannot be undone.
+                </p>
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group mb-6">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal</span>
+                    </div>
+                    <div class="relative">
+                        <pre
+                            class="font-mono text-sm text-white"><code>geeup delete --id "users/username/test_collection"</code></pre>
+                    </div>
+                </div>
+
+                <!-- Delete Params -->
+                <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <table class="args-table bg-white dark:bg-dark-surface">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-gray-800">
+                                <th class="w-1/3">Argument</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-tag">--id</span><span class="req-badge">Required</span></td>
+                                <td class="text-slate-600 dark:text-slate-400">Full path to the asset (collection or
+                                    image) for deletion.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="utils-cookie" class="mb-20 scroll-mt-28">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Cookie Setup</h3>
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>cookie_setup</code> command is a utility to manually configure cookies for authentication
+                    if standard service account methods are not applicable. It prompts for a cookie list in JSON format.
+                </p>
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal</span>
+                    </div>
+                    <div class="relative">
+                        <pre class="font-mono text-sm text-white"><code>geeup cookie_setup</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="utils-readme" class="mb-20 scroll-mt-28">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Readme</h3>
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>readme</code> command simply opens the official documentation in your default web browser.
+                </p>
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal</span>
+                    </div>
+                    <div class="relative">
+                        <pre class="font-mono text-sm text-white"><code>geeup readme</code></pre>
+                    </div>
+                </div>
+            </section>
+
+
+            <hr class="border-gray-100 dark:border-gray-800 mb-16">
+
+            <!-- ANALYTICS SECTION -->
+            <section id="analytics" class="mb-24 scroll-mt-28">
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                    <div class="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg"><i data-lucide="bar-chart-2"
+                            class="text-blue-600 dark:text-blue-400"></i></div>
+                    Usage Analytics
+                </h2>
+
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    Live view of tool usage statistics and metrics.
+                </p>
+
+                <!-- ADDED: Analytics Dashboard Iframe -->
+                <!-- Same setting applied: only reduce height, keep everything else intact -->
+                <div
+                    class="mt-6 w-full bg-white dark:bg-dark-surface rounded-2xl overflow-hidden shadow-lg border border-gray-200 dark:border-dark-border">
+                    <!-- Light mode -->
+                    <iframe id="dash-light" class="block dark:hidden w-full border-0" height="475"
+                        src="https://clickhouse-analytics.metabaseapp.com/public/dashboard/8d516106-3a9f-4674-aafc-aa39d6380ee2?project_name=geeup#&theme=day"
+                        allowtransparency>
+                    </iframe>
+                    <!-- Dark mode -->
+                    <iframe id="dash-dark" class="hidden dark:block w-full border-0" height="475"
+                        src="https://clickhouse-analytics.metabaseapp.com/public/dashboard/8d516106-3a9f-4674-aafc-aa39d6380ee2?project_name=geeup#&theme=night"
+                        allowtransparency>
+                    </iframe>
+                </div>
+                <!-- Adjust height="420"–"480" if you want it tighter or looser -->
+
+            </section>
+
+            <!-- Footer -->
+            <footer class="border-t border-gray-200 dark:border-dark-border py-12 text-center">
+                <div class="flex items-center justify-center gap-2 mb-4">
+                    <img src="https://i.imgur.com/Q3xnTtn.png" class="w-6 h-6 rounded shadow-sm">
+                    <span class="font-bold text-slate-900 dark:text-white">geeup</span>
+                </div>
+                <p class="text-sm text-gray-500 mb-2">&copy; 2025 Samapriya Roy. Apache 2.0 License.</p>
+            </footer>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Theme Toggle Logic
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const htmlElement = document.documentElement;
+
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            htmlElement.classList.add('dark');
+        } else {
+            htmlElement.classList.remove('dark');
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            if (htmlElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+        });
+
+        // Mobile Menu Logic
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        let isMenuOpen = false;
+
+        menuToggle.addEventListener('click', () => {
+            isMenuOpen = !isMenuOpen;
+            if (isMenuOpen) {
+                sidebar.classList.remove('-translate-x-full');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+
+        document.querySelectorAll('.nav-item').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 1024) {
+                    sidebar.classList.add('-translate-x-full');
+                    isMenuOpen = false;
+                }
+            });
+        });
+
+        // Accordion Logic
+        const detailsElements = document.querySelectorAll('.sidebar-group details');
+        detailsElements.forEach((targetDetail) => {
+            targetDetail.addEventListener('click', () => {
+                detailsElements.forEach((detail) => {
+                    if (detail !== targetDetail) {
+                        detail.removeAttribute('open');
+                    }
+                });
+            });
+        });
+
+        // Search Functionality
+        const searchInput = document.getElementById('search-input');
+        const navItems = document.querySelectorAll('.nav-item');
+        const mainContent = document.querySelector('main');
+
+        function highlight(text) {
+            const marks = mainContent.querySelectorAll('mark');
+            marks.forEach(mark => {
+                const parent = mark.parentNode;
+                parent.replaceChild(document.createTextNode(mark.textContent), mark);
+                parent.normalize();
+            });
+
+            if (!text) return;
+            const regex = new RegExp(`(${text})`, 'gi');
+
+            const filter = {
+                acceptNode: function (node) {
+                    if (node.parentNode.tagName === 'MARK' ||
+                        node.parentNode.tagName === 'SCRIPT' ||
+                        node.parentNode.tagName === 'STYLE' ||
+                        node.parentNode.tagName === 'PRE' ||
+                        node.parentNode.tagName === 'CODE') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            };
+
+            const walker = document.createTreeWalker(mainContent, NodeFilter.SHOW_TEXT, filter, false);
+            const nodes = [];
+            while (walker.nextNode()) nodes.push(walker.currentNode);
+
+            nodes.forEach(node => {
+                if (node.nodeValue.toLowerCase().includes(text.toLowerCase())) {
+                    const span = document.createElement('span');
+                    span.innerHTML = node.nodeValue.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800 text-slate-900 dark:text-white rounded-sm">$1</mark>');
+                    if (node.parentNode) {
+                        node.parentNode.replaceChild(span, node);
+                    }
+                }
+            });
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase().trim();
+            highlight(term);
+
+            navItems.forEach(item => {
+                const targetId = item.getAttribute('href');
+                let match = false;
+                if (item.innerText.toLowerCase().includes(term)) match = true;
+                if (!match && targetId && targetId.startsWith('#')) {
+                    const targetSection = document.querySelector(targetId);
+                    if (targetSection && targetSection.innerText.toLowerCase().includes(term)) match = true;
+                }
+
+                const parentDetails = item.closest('details');
+                if (match || term === '') {
+                    item.style.display = 'block';
+                    if (parentDetails && term !== '') parentDetails.setAttribute('open', '');
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // Scroll Spy
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.nav-item');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= (sectionTop - 300)) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active-nav');
+                if (link.getAttribute('href').includes(current)) {
+                    link.classList.add('active-nav');
+                }
+            });
+        });
+
+        // 1. Define the Action Buttons HTML
+        const buttonsHTML = `
+        <div class="action-buttons absolute top-2 right-2 flex gap-2 opacity-0 transition-opacity duration-200 z-10">
+            <button class="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-2 py-1 rounded text-xs hover:bg-white/20 flex items-center gap-1" onclick="copyCode(this)">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copy
+            </button>
+            <button class="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-2 py-1 rounded text-xs hover:bg-white/20 flex items-center gap-1" onclick="downloadTerminal(this)">
+                <i data-lucide="download" class="w-3 h-3"></i> PNG
+            </button>
+        </div>
+    `;
+
+        // 2. CSS Injection for the hover effect
+        const style = document.createElement('style');
+        style.innerHTML = `
+        .group:hover .action-buttons, .action-buttons:focus-within { opacity: 1; }
+    `;
+        document.head.appendChild(style);
+
+        // 3. Find all Terminal blocks and Inject
+        document.addEventListener('DOMContentLoaded', () => {
+            // Select all relative containers inside terminal groups
+            const terminalContainers = document.querySelectorAll('.group .relative');
+
+            terminalContainers.forEach(container => {
+                // Remove old copy buttons if present
+                const oldBtn = container.querySelector('.copy-btn');
+                if (oldBtn) oldBtn.remove();
+
+                container.insertAdjacentHTML('beforeend', buttonsHTML);
+            });
+            lucide.createIcons();
+        });
+
+        // 4. The Download Function
+        function downloadTerminal(button) {
+            const terminalNode = button.closest('.group');
+            const btnContainer = button.closest('.action-buttons');
+
+            // Hide buttons for screenshot
+            btnContainer.classList.add('hidden');
+
+            html2canvas(terminalNode, {
+                scale: 2,
+                backgroundColor: null
+            }).then(canvas => {
+                btnContainer.classList.remove('hidden');
+                const link = document.createElement('a');
+                link.download = 'terminal-output.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        // 5. The Copy Function
+        function copyCode(button) {
+            const container = button.closest('.relative');
+            const code = container.querySelector('code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = button.innerHTML;
+                button.innerText = 'Copied!';
+                button.classList.add('text-green-400');
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('text-green-400');
+                    lucide.createIcons();
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+
+</html>
