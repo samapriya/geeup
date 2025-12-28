@@ -295,6 +295,10 @@
                     Interface</a>
                 <a href="#installation"
                     class="nav-item block px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Installation</a>
+                <!-- NEW: Cookie Setup Link -->
+                <a href="#cookie-setup"
+                    class="nav-item block px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cookie
+                    Setup</a>
 
                 <!-- Auth Group -->
                 <div class="sidebar-group">
@@ -386,9 +390,6 @@
                                 class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Delete</a>
                             <a href="#utils-readme"
                                 class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Readme</a>
-                            <a href="#utils-cookie"
-                                class="nav-item block px-3 py-2 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-2 border-transparent hover:border-brand-500">Cookie
-                                Setup</a>
                         </div>
                     </details>
                 </div>
@@ -448,7 +449,7 @@
                     </div>
                     <!-- Hero Logo -->
                     <div class="flex-shrink-0 w-48 h-48 lg:w-64 lg:h-64 relative hidden md:block">
-                        <div class="absolute inset-0 bg-brand-500/20 blur-3xl rounded-full"></div>
+                        <!-- Removed Glow Effect Here -->
                         <img src="https://i.imgur.com/Q3xnTtn.png" alt="geeup logo"
                             class="relative w-full h-full object-contain drop-shadow-2xl hover:rotate-3 transition-transform duration-500">
                     </div>
@@ -569,6 +570,121 @@ options:
                             class="bg-amber-100 dark:bg-amber-900/50 px-1 py-0.5 rounded font-mono text-amber-900 dark:text-amber-100">earthengine authenticate</code>.
                     </p>
                 </div>
+            </section>
+
+            <!-- NEW COOKIE SETUP SECTION -->
+            <section id="cookie-setup" class="mb-24 scroll-mt-28">
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                    <div class="bg-slate-100 dark:bg-slate-800 p-2 rounded-lg"><i data-lucide="cookie"
+                            class="text-brand-500"></i></div>
+                    Cookie Setup
+                </h2>
+
+                <p class="mb-6 text-slate-600 dark:text-slate-400">
+                    The <code>cookie_setup</code> tool is an essential step for configuring uploads. It utilizes a
+                    third-party Chrome extension called
+                    <a href="https://chrome.google.com/webstore/detail/copy-cookies/jcbpglbplpblnagieibnemmkiamekcdg/related"
+                        target="_blank" class="text-brand-600 hover:text-brand-700 underline decoration-dotted">Copy
+                        Cookies</a>.
+                    This extension simplifies the process of copying the necessary authentication cookies from your
+                    browser to the geeup tool. Please note that geeup does not provide support or warranty for the
+                    extension.
+                </p>
+
+                <div
+                    class="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl p-6 shadow-sm mb-8">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">How to set up your cookies:</h3>
+
+                    <ol class="list-decimal list-outside ml-5 space-y-4 text-slate-600 dark:text-slate-400">
+                        <li>
+                            <strong class="text-slate-900 dark:text-white">Install the Chrome Extension:</strong>
+                            Install the <a
+                                href="https://chrome.google.com/webstore/detail/copy-cookies/jcbpglbplpblnagieibnemmkiamekcdg/related"
+                                target="_blank" class="text-brand-600 hover:underline">Copy Cookies extension</a> in
+                            your Chrome browser.
+                        </li>
+                        <li>
+                            <strong class="text-slate-900 dark:text-white">Copy Cookies:</strong>
+                            Log into <a href="https://code.earthengine.google.com" target="_blank"
+                                class="text-brand-600 hover:underline">code.earthengine.google.com</a>. Once logged in,
+                            click the extension icon to copy the required cookies to your clipboard.
+                        </li>
+                    </ol>
+
+                    <div class="mt-6 mb-2 rounded-lg overflow-hidden border border-gray-200 dark:border-dark-border">
+                        <img src="https://user-images.githubusercontent.com/6677629/114257576-8de20780-9986-11eb-86c5-4c85e35367c3.gif"
+                            alt="Copy Cookies Extension Demo" class="w-full h-auto object-cover">
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Running the Setup</h3>
+                <p class="mb-4 text-slate-600 dark:text-slate-400">
+                    To run the setup method, parse the copied cookies, and save them for use, run the following command
+                    and paste your clipboard content when prompted:
+                </p>
+
+                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group mb-8">
+                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-mono">Terminal</span>
+                    </div>
+                    <div class="relative">
+                        <pre class="font-mono text-sm text-white"><code>geeup cookie_setup</code></pre>
+                    </div>
+                </div>
+
+                <!-- Important Notes -->
+                <div class="bg-blue-50 dark:bg-blue-900/10 border-l-4 border-blue-500 rounded-r-lg p-5 mb-8">
+                    <h4 class="text-blue-800 dark:text-blue-200 font-bold mb-2 flex items-center gap-2">
+                        <i data-lucide="info" class="w-4 h-4"></i> Important Notes
+                    </h4>
+                    <ul class="list-disc list-inside space-y-2 text-sm text-blue-800 dark:text-blue-200">
+                        <li><strong>Use a Fresh Browser Window:</strong> Open a new browser window (not incognito) to
+                            ensure all necessary cookies are loaded correctly.</li>
+                        <li><strong>Clear Cookies on Error:</strong> If your upload fails with an "Unable to read"
+                            error, clear your browser cookies and try copying them again from a fresh instance.</li>
+                        <li><strong>Matching Accounts:</strong> Ensure you save cookies for the <em>same</em> Earth
+                            Engine account you initialized using <code>earthengine authenticate</code>.</li>
+                    </ul>
+                </div>
+
+                <!-- OS Specific Instructions -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div
+                        class="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-5 border border-gray-200 dark:border-dark-border">
+                        <h4 class="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="terminal-square" class="w-4 h-4"></i> Bash Users
+                        </h4>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                            Canonical mode limits pasting to 4095 characters. If <code>geeup cookie_setup</code> fails,
+                            try this:
+                        </p>
+                        <ol
+                            class="list-decimal list-inside text-sm text-slate-600 dark:text-slate-400 space-y-1 font-mono bg-white dark:bg-black/20 p-3 rounded border border-gray-200 dark:border-dark-border">
+                            <li>stty -icanon</li>
+                            <li>geeup cookie_setup</li>
+                            <li>stty icanon</li>
+                        </ol>
+                    </div>
+
+                    <div
+                        class="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-5 border border-gray-200 dark:border-dark-border">
+                        <h4 class="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="apple" class="w-4 h-4"></i> Mac Users
+                        </h4>
+                        <p class="text-sm text-slate-600 dark:text-slate-400">
+                            You may need to change your default login shell from <code>/bin/zsh</code> to
+                            <code>/bin/sh</code> to ensure the <code>stty -icanon</code> command works as expected.
+                            <a href="https://github.com/samapriya/geeup/issues/41" target="_blank"
+                                class="text-brand-600 hover:underline">Reference Issue #41</a>.
+                        </p>
+                    </div>
+                </div>
+
             </section>
 
             <hr class="border-gray-100 dark:border-gray-800 mb-16">
@@ -1172,27 +1288,6 @@ geeup upload --source "./rasters" \
                             </tr>
                         </tbody>
                     </table>
-                </div>
-            </section>
-
-            <section id="utils-cookie" class="mb-20 scroll-mt-28">
-                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Cookie Setup</h3>
-                <p class="mb-6 text-slate-600 dark:text-slate-400">
-                    The <code>cookie_setup</code> command is a utility to manually configure cookies for authentication
-                    if standard service account methods are not applicable. It prompts for a cookie list in JSON format.
-                </p>
-                <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 group">
-                    <div class="bg-slate-950 px-4 py-2 flex justify-between items-center border-b border-slate-800">
-                        <div class="flex gap-1.5">
-                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                        </div>
-                        <span class="text-xs text-slate-500 font-mono">Terminal</span>
-                    </div>
-                    <div class="relative">
-                        <pre class="font-mono text-sm text-white"><code>geeup cookie_setup</code></pre>
-                    </div>
                 </div>
             </section>
 
