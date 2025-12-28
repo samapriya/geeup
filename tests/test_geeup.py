@@ -226,47 +226,45 @@ class TestRenameCommand:
 class TestQuotaCommand:
     """Test quota command."""
 
-    def test_quota_no_project(self, mock_ee_initialize, mock_argv, mock_google_credentials):
+    def test_quota_no_project(self, mock_ee_initialize, mock_argv):
         """Test quota display without specific project."""
-        with patch('geeup.quota.ee.data.get_persistent_credentials', return_value=mock_google_credentials):
-            with patch('geeup.quota.fetch_quota_data') as mock_fetch:
-                mock_fetch.return_value = {
-                    'users/test': {
-                        'quota': {
-                            'sizeBytes': '1000000',
-                            'maxSizeBytes': '10000000',
-                            'assetCount': '10',
-                            'maxAssets': '100'
-                        }
+        with patch('geeup.quota.fetch_quota_data') as mock_fetch:
+            mock_fetch.return_value = {
+                'users/test': {
+                    'quota': {
+                        'sizeBytes': '1000000',
+                        'maxSizeBytes': '10000000',
+                        'assetCount': '10',
+                        'maxAssets': '100'
                     }
                 }
-                with patch('sys.argv', ['geeup', 'quota']):
-                    from geeup.geeup import main
-                    try:
-                        main()
-                    except SystemExit:
-                        pass
+            }
+            with patch('sys.argv', ['geeup', 'quota']):
+                from geeup.geeup import main
+                try:
+                    main()
+                except SystemExit:
+                    pass
 
-    def test_quota_specific_project(self, mock_ee_initialize, mock_argv, mock_google_credentials):
+    def test_quota_specific_project(self, mock_ee_initialize, mock_argv):
         """Test quota for specific project."""
-        with patch('geeup.quota.ee.data.get_persistent_credentials', return_value=mock_google_credentials):
-            with patch('geeup.quota.fetch_quota_data') as mock_fetch:
-                mock_fetch.return_value = {
-                    'projects/test': {
-                        'quota': {
-                            'sizeBytes': '5000000000',
-                            'maxSizeBytes': '10000000000',
-                            'assetCount': '50',
-                            'maxAssets': '1000'
-                        }
+        with patch('geeup.quota.fetch_quota_data') as mock_fetch:
+            mock_fetch.return_value = {
+                'projects/test': {
+                    'quota': {
+                        'sizeBytes': '5000000000',
+                        'maxSizeBytes': '10000000000',
+                        'assetCount': '50',
+                        'maxAssets': '1000'
                     }
                 }
-                with patch('sys.argv', ['geeup', 'quota', '--project', 'projects/test']):
-                    from geeup.geeup import main
-                    try:
-                        main()
-                    except SystemExit:
-                        pass
+            }
+            with patch('sys.argv', ['geeup', 'quota', '--project', 'projects/test']):
+                from geeup.geeup import main
+                try:
+                    main()
+                except SystemExit:
+                    pass
 
 
 class TestZipshapeCommand:
@@ -467,7 +465,7 @@ class TestDeleteCommand:
 class TestUploadCommand:
     """Test upload commands."""
 
-    def test_upload_basic(self, mock_ee_initialize, temp_dir, mock_argv, mock_google_credentials):
+    def test_upload_basic(self, mock_ee_initialize, temp_dir, mock_argv):
         """Test basic image upload."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -479,24 +477,21 @@ class TestUploadCommand:
         metadata_file = temp_dir / "metadata.csv"
         metadata_file.write_text("system:index\ntest_image")
 
-        with patch('geeup.batch_uploader.ee.data.get_persistent_credentials', return_value=mock_google_credentials):
-            with patch('geeup.batch_uploader.upload') as mock_upload:
-                with patch('sys.argv', [
-                    'geeup', 'upload',
-                    '--source', str(source_dir),
-                    '--dest', 'users/test/collection',
-                    '--metadata', str(metadata_file),
-                    '--user', 'test@example.com'
-                ]):
-                    from geeup.geeup import main
-                    try:
-                        main()
-                    except SystemExit:
-                        pass
-                    # Upload should be called if validation passes
-                    # With no actual GDAL, it may not be called
+        with patch('sys.argv', [
+            'geeup', 'upload',
+            '--source', str(source_dir),
+            '--dest', 'users/test/collection',
+            '--metadata', str(metadata_file),
+            '--user', 'test@example.com'
+        ]):
+            from geeup.geeup import main
+            try:
+                main()
+            except SystemExit:
+                pass
+                # Validation may fail, which is expected
 
-    def test_upload_with_options(self, mock_ee_initialize, temp_dir, mock_argv, mock_google_credentials):
+    def test_upload_with_options(self, mock_ee_initialize, temp_dir, mock_argv):
         """Test upload with additional options."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -508,30 +503,29 @@ class TestUploadCommand:
         metadata_file = temp_dir / "metadata.csv"
         metadata_file.write_text("system:index\ntest_image")
 
-        with patch('geeup.batch_uploader.ee.data.get_persistent_credentials', return_value=mock_google_credentials):
-            with patch('geeup.batch_uploader.upload') as mock_upload:
-                with patch('sys.argv', [
-                    'geeup', 'upload',
-                    '--source', str(source_dir),
-                    '--dest', 'users/test/collection',
-                    '--metadata', str(metadata_file),
-                    '--user', 'test@example.com',
-                    '--nodata', '0',
-                    '--pyramids', 'MEAN',
-                    '--workers', '2',
-                    '--dry-run'
-                ]):
-                    from geeup.geeup import main
-                    try:
-                        main()
-                    except SystemExit:
-                        pass
+        with patch('sys.argv', [
+            'geeup', 'upload',
+            '--source', str(source_dir),
+            '--dest', 'users/test/collection',
+            '--metadata', str(metadata_file),
+            '--user', 'test@example.com',
+            '--nodata', '0',
+            '--pyramids', 'MEAN',
+            '--workers', '2',
+            '--dry-run'
+        ]):
+            from geeup.geeup import main
+            try:
+                main()
+            except SystemExit:
+                pass
+                # Validation may fail, which is expected
 
 
 class TestTabupCommand:
     """Test table upload commands."""
 
-    def test_tabup_basic(self, mock_ee_initialize, temp_dir, mock_argv, mock_google_credentials):
+    def test_tabup_basic(self, mock_ee_initialize, temp_dir, mock_argv):
         """Test basic table upload."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -540,21 +534,20 @@ class TestTabupCommand:
         test_csv = source_dir / "test_table.csv"
         test_csv.write_text("id,name\n1,test")
 
-        with patch('geeup.tuploader.ee.data.get_persistent_credentials', return_value=mock_google_credentials):
-            with patch('geeup.tuploader.tabup') as mock_tabup:
-                with patch('sys.argv', [
-                    'geeup', 'tabup',
-                    '--source', str(source_dir),
-                    '--dest', 'users/test/folder',
-                    '--user', 'test@example.com'
-                ]):
-                    from geeup.geeup import main
-                    try:
-                        main()
-                    except SystemExit:
-                        pass
+        with patch('sys.argv', [
+            'geeup', 'tabup',
+            '--source', str(source_dir),
+            '--dest', 'users/test/folder',
+            '--user', 'test@example.com'
+        ]):
+            from geeup.geeup import main
+            try:
+                main()
+            except SystemExit:
+                pass
+                # Validation may fail, which is expected
 
-    def test_tabup_with_coordinates(self, mock_ee_initialize, temp_dir, mock_argv, mock_google_credentials):
+    def test_tabup_with_coordinates(self, mock_ee_initialize, temp_dir, mock_argv):
         """Test table upload with coordinate columns."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -563,21 +556,20 @@ class TestTabupCommand:
         test_csv = source_dir / "test_table.csv"
         test_csv.write_text("id,longitude,latitude\n1,0.0,0.0")
 
-        with patch('geeup.tuploader.ee.data.get_persistent_credentials', return_value=mock_google_credentials):
-            with patch('geeup.tuploader.tabup') as mock_tabup:
-                with patch('sys.argv', [
-                    'geeup', 'tabup',
-                    '--source', str(source_dir),
-                    '--dest', 'users/test/folder',
-                    '--user', 'test@example.com',
-                    '--x', 'longitude',
-                    '--y', 'latitude'
-                ]):
-                    from geeup.geeup import main
-                    try:
-                        main()
-                    except SystemExit:
-                        pass
+        with patch('sys.argv', [
+            'geeup', 'tabup',
+            '--source', str(source_dir),
+            '--dest', 'users/test/folder',
+            '--user', 'test@example.com',
+            '--x', 'longitude',
+            '--y', 'latitude'
+        ]):
+            from geeup.geeup import main
+            try:
+                main()
+            except SystemExit:
+                pass
+                # Validation may fail, which is expected
 
 
 class TestIntegration:

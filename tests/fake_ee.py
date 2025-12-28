@@ -1,5 +1,7 @@
 """Enhanced fake ee module for comprehensive testing."""
 
+from unittest.mock import MagicMock
+
 import box
 
 
@@ -167,10 +169,10 @@ class FeatureCollection:
 
     def aggregate_array(self, *_, **__):
         return List(["aggregation-one", "aggregation-two"])
-    
+
     def size(self):
         return MockNumber(len(self.features))
-    
+
     def get(self, prop):
         return MockComputedObject(1000000)
 
@@ -220,7 +222,7 @@ class MockNumber:
     """Mock for ee.Number-like objects."""
     def __init__(self, value):
         self._value = value
-    
+
     def getInfo(self):
         return self._value
 
@@ -229,7 +231,7 @@ class MockComputedObject:
     """Mock for computed objects."""
     def __init__(self, value):
         self._value = value
-    
+
     def getInfo(self):
         return self._value
 
@@ -246,13 +248,13 @@ class ImageCollection:
 
     def mosaic(self, *_, **__):
         return Image()
-    
+
     def aggregate_array(self, prop):
         """Mock aggregate_array to return asset sizes."""
         if prop == "system:asset_size":
             return List([1000000, 2000000, 500000])
         return List([])
-    
+
     def size(self):
         return MockNumber(len(self.images))
 
@@ -283,14 +285,18 @@ class EEException(Exception):
 
 class DataModule:
     """Mock ee.data module."""
-    
+
     @staticmethod
     def get_persistent_credentials():
-        """Mock credentials."""
-        class MockCredentials:
-            pass
-        return MockCredentials()
-    
+        """Mock credentials with proper Google auth structure."""
+        mock_creds = MagicMock()
+        mock_creds.before_request = MagicMock()
+        mock_creds.refresh = MagicMock()
+        mock_creds.expired = False
+        mock_creds.valid = True
+        mock_creds.service_account_email = "test@test-project.iam.gserviceaccount.com"
+        return mock_creds
+
     @staticmethod
     def getTaskList():
         """Mock task list."""
@@ -305,17 +311,17 @@ class DataModule:
                 'update_timestamp_ms': 1609462800000,
             }
         ]
-    
+
     @staticmethod
     def getTaskStatus(task_ids):
         """Mock task status."""
         return [{'state': 'RUNNING', 'id': task_ids[0]}]
-    
+
     @staticmethod
     def cancelTask(task_id):
         """Mock cancel task."""
         pass
-    
+
     @staticmethod
     def getAsset(asset_path):
         """Mock get asset."""
@@ -328,7 +334,7 @@ class DataModule:
         elif 'table' in asset_path.lower():
             return {'type': 'TABLE', 'sizeBytes': '1000000', 'featureCount': 100}
         return {'type': 'IMAGE'}
-    
+
     @staticmethod
     def getInfo(path):
         """Mock get info."""
@@ -340,7 +346,7 @@ class DataModule:
                 'maxAssets': '1000'
             }
         }
-    
+
     @staticmethod
     def getAssetRoots():
         """Mock get asset roots."""
@@ -348,7 +354,7 @@ class DataModule:
             {'id': 'projects/test-project/assets'},
             {'id': 'users/testuser/assets'}
         ]
-    
+
     @staticmethod
     def getAssetRootQuota(root_path):
         """Mock get asset root quota."""

@@ -41,6 +41,18 @@ def mock_ee_initialize():
 
 
 @pytest.fixture
+def mock_google_credentials():
+    """Mock Google credentials with proper methods."""
+    mock_creds = MagicMock()
+    mock_creds.before_request = MagicMock()
+    mock_creds.refresh = MagicMock()
+    mock_creds.expired = False
+    mock_creds.valid = True
+    mock_creds.service_account_email = "test@test-project.iam.gserviceaccount.com"
+    return mock_creds
+
+
+@pytest.fixture
 def mock_gdal():
     """Mock GDAL module for testing."""
     mock_gdal_module = MagicMock()
