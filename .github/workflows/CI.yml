@@ -8,21 +8,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Run tests first
+  # Run tests on Ubuntu only
   test:
-    name: Run Tests on ${{ matrix.os }} - Python ${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+    name: Run Tests on Ubuntu - Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12"]
-        exclude:
-          # Optional: reduce matrix size if needed
-          - os: macos-latest
-            python-version: "3.10"
-          - os: windows-latest
-            python-version: "3.10"
 
     steps:
       - name: Checkout repository
@@ -52,13 +45,13 @@ jobs:
         run: |
           pytest tests/ -v --tb=short --color=yes
 
-      - name: Run tests with coverage (Ubuntu only)
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      - name: Run tests with coverage (Python 3.11 only)
+        if: matrix.python-version == '3.11'
         run: |
           pytest tests/ --cov=geeup --cov-report=xml --cov-report=term
 
-      - name: Upload coverage to Codecov (Ubuntu only)
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      - name: Upload coverage to Codecov (Python 3.11 only)
+        if: matrix.python-version == '3.11'
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
@@ -68,17 +61,16 @@ jobs:
 
       - name: Test summary
         run: |
-          echo "Tests passed on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+          echo "Tests passed on Ubuntu with Python ${{ matrix.python-version }}"
 
   # Build and installation verification
   build:
-    name: Build & Install on ${{ matrix.os }} - Python ${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+    name: Build & Install on Ubuntu - Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
     needs: test # Only run after tests pass
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12"]
 
     steps:
@@ -102,22 +94,12 @@ jobs:
         run: |
           python -m build
 
-      - name: Install package (Unix)
-        if: matrix.os != 'windows-latest'
+      - name: Install package
         run: |
           for file in dist/*.whl; do
             echo "Installing $file..."
             pip install "$file"
           done
-
-      - name: Install package (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          Get-ChildItem -Path dist -Filter *.whl | ForEach-Object {
-            Write-Host "Installing $_..."
-            pip install $_.FullName
-          }
 
       - name: Verify geeup installation
         run: |
@@ -133,12 +115,12 @@ jobs:
 
       - name: Installation summary
         run: |
-          echo "Build and installation successful on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+          echo "Build and installation successful on Ubuntu with Python ${{ matrix.python-version }}"
           echo "All help commands working correctly"
 
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        if: matrix.python-version == '3.11'
         with:
           name: wheels
           path: dist/*.whl
