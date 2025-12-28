@@ -1,0 +1,3 @@
+"""
+Geeup tests package initialization.
+"""
