@@ -2,7 +2,7 @@
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=plastic&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/samapriya/)
 [![Medium](https://img.shields.io/badge/Medium-12100E?style=flat&logo=medium&logoColor=white)](https://medium.com/@samapriyaroy)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8385048.svg)](https://doi.org/10.5281/zenodo.8385048)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18073520.svg)](https://doi.org/10.5281/zenodo.18073520)
 [![PyPI version](https://badge.fury.io/py/geeup.svg)](https://badge.fury.io/py/geeup)
 [![Downloads](https://static.pepy.tech/badge/geeup)](https://pepy.tech/project/geeup)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -16,8 +16,8 @@
 If you use this project, please star and cite it as below:
 
 ```
-Samapriya Roy. (2023). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (1.0.0).
-Zenodo. https://doi.org/10.5281/zenodo.8385048
+Samapriya Roy. (2025). samapriya/geeup: geeup: Simple CLI for Earth Engine Uploads (2.0.0).
+Zenodo. https://doi.org/10.5281/zenodo.18073520
 ```
 
 ## Table of Contents
