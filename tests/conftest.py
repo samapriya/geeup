@@ -2,10 +2,11 @@
 Pytest configuration for geeup tests.
 """
 
-import pytest
-import sys
 import os
-from unittest.mock import Mock, MagicMock, patch
+import sys
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 # Import fake_ee from the same directory
 from . import fake_ee
@@ -25,18 +26,11 @@ def setup_environment():
     # Ensure ee is mocked
     if 'ee' not in sys.modules:
         sys.modules['ee'] = fake_ee
-    
+
     yield
-    
+
     # Cleanup
     pass
-
-
-@pytest.fixture
-def runner():
-    """Create a Click CLI test runner."""
-    from click.testing import CliRunner
-    return CliRunner()
 
 
 @pytest.fixture
@@ -55,22 +49,22 @@ def mock_gdal():
     mock_gdal_module.PopErrorHandler = MagicMock()
     mock_gdal_module.GetDataTypeName = MagicMock(return_value='Byte')
     mock_gdal_module.GetColorInterpretationName = MagicMock(return_value='Gray')
-    
+
     # Mock dataset
     mock_dataset = MagicMock()
     mock_dataset.RasterXSize = 100
     mock_dataset.RasterYSize = 100
     mock_dataset.RasterCount = 1
-    
+
     # Mock band
     mock_band = MagicMock()
     mock_band.DataType = 1  # GDT_Byte
     mock_band.GetColorInterpretation = MagicMock(return_value=1)
     mock_band.GetColorTable = MagicMock(return_value=None)
     mock_dataset.GetRasterBand = MagicMock(return_value=mock_band)
-    
+
     mock_gdal_module.Open = MagicMock(return_value=mock_dataset)
-    
+
     with patch.dict('sys.modules', {'osgeo': MagicMock(), 'osgeo.gdal': mock_gdal_module}):
         yield mock_gdal_module
 
@@ -129,10 +123,10 @@ def sample_quota_data():
 def mock_service_account_creds(tmp_path):
     """Mock service account credentials file."""
     import json
-    
+
     sa_dir = tmp_path / ".config" / "earthengine"
     sa_dir.mkdir(parents=True, exist_ok=True)
-    
+
     sa_file = sa_dir / "service_account_credentials.json"
     sa_data = {
         "type": "service_account",
@@ -145,9 +139,9 @@ def mock_service_account_creds(tmp_path):
         "token_uri": "https://oauth2.googleapis.com/token",
         "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
     }
-    
+
     sa_file.write_text(json.dumps(sa_data))
-    
+
     return sa_dir, sa_file
 
 
